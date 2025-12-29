@@ -1,8 +1,103 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
 
-body {
-    background-color: #f3f4f6;
-    font-family: 'Inter', sans-serif;
+/* 1. Ensure Inter font is loaded or defined via Tailwind config */
+:root {
+    --primary: #0f172a;
+    --secondary: #1e293b;
+    --accent: #ef4444;
+    --accent-dark: #dc2626;
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --border: #334155;
+    --success: #10b981;
+    --surface: #1a1a2e;
+}
+
+/* 2. Added @layer to ensure Tailwind can safely inject styles */
+@layer base {
+    * {
+        @apply transition-colors duration-300;
+    }
+
+    body {
+        @apply bg-slate-950 text-slate-100;
+        /* Using standard CSS for gradients to avoid @apply complexity with multiple colors */
+        background-image: radial-gradient(at bottom left, #020617, #0f172a, #020617);
+        font-family: "Inter", system-ui, -apple-system, sans-serif;
+        color-scheme: dark;
+        min-height: 100vh;
+    }
+}
+
+/* 3. Standardized Custom Classes using @layer components */
+@layer components {
+    /* Glass morphism effect */
+    .glass {
+        @apply bg-white/5 backdrop-blur-xl border border-white/10;
+    }
+
+    .glass-primary {
+        @apply bg-slate-900/50 backdrop-blur-lg border border-slate-700/50;
+    }
+
+    .card-elevated {
+        @apply shadow-lg shadow-black/50 hover:shadow-xl hover:shadow-black/70 transition-shadow duration-300;
+    }
+
+    /* Button base styles */
+    .btn-base {
+        @apply px-6 py-3 rounded-lg font-semibold transition-all duration-200 ease-out inline-block cursor-pointer;
+        @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-red-500;
+    }
+
+    .btn-primary {
+        @apply btn-base bg-red-500 hover:bg-red-600 text-white active:scale-95;
+    }
+
+    .btn-secondary {
+        @apply btn-base bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-100 active:scale-95;
+    }
+
+    /* Input styles */
+    .input-base {
+        @apply bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-3;
+        @apply text-slate-100 placeholder:text-slate-400/50;
+        @apply focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent;
+        @apply transition-all duration-200 appearance-none;
+    }
+}
+
+/* 4. Animations (Keep outside @layer or in @layer utilities) */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* 5. Scrollbar (Note: Chromium only, Firefox uses scrollbar-color) */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--secondary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 100px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+/* 6. Utility fixes */
+.text-balance {
+    text-wrap: balance; /* Supported in modern browsers */
 }

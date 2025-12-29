@@ -1,90 +1,143 @@
-import React, { useState, useEffect } from 'react';
-import PanicButton from '../components/PanicButton';
-import ChatWindow from '../components/ChatWindow';
-import CPRMetronome from '../components/CPRMetronome';
-import axios from 'axios';
+"use client";
+
+import { useState, useEffect } from "react";
+import PanicButton from "../components/PanicButton";
+import ChatWindow from "../components/ChatWindow";
+import CPRMetronome from "../components/CPRMetronome";
+import axios from "axios";
+import { LogOut, Heart, AlertCircle } from "lucide-react";
 
 const Dashboard = () => {
-    const [mode, setMode] = useState('general');
-    const [cprActive, setCprActive] = useState(false);
-    const [history, setHistory] = useState(null);
-    const userId = localStorage.getItem('user_id');
+  const [mode, setMode] = useState("general");
+  const [cprActive, setCprActive] = useState(false);
+  const [history, setHistory] = useState(null);
+  const userId = localStorage.getItem("user_id");
 
-    useEffect(() => {
-        // Fetch basic history for display
-        if (userId) {
-            axios.get(`/api/medical-history?user_id=${userId}`)
-                .then(res => setHistory(res.data))
-                .catch(err => console.error(err));
-        }
-    }, [userId]);
+  useEffect(() => {
+    if (userId) {
+      axios
+        .get(`/api/medical-history?user_id=${userId}`)
+        .then((res) => setHistory(res.data))
+        .catch((err) => console.error(err));
+    }
+  }, [userId]);
 
-    const handleEmergencyStart = (location) => {
-        setMode('emergency');
-    };
+  const handleEmergencyStart = (location) => {
+    setMode("emergency");
+  };
 
-    const handleAction = (action) => {
-        if (action === 'start_metronome') {
-            setCprActive(true);
-        }
-    };
+  const handleAction = (action) => {
+    if (action === "start_metronome") {
+      setCprActive(true);
+    }
+  };
 
-    return (
-        <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-            <header className="flex justify-between items-center mb-8 max-w-6xl mx-auto">
-                <h1 className="text-3xl font-black text-gray-900 tracking-tight">Kiro<span className="text-red-600">.</span></h1>
-                <button 
-                    onClick={() => { localStorage.removeItem('user_id'); window.dispatchEvent(new Event('storage')); window.location.href = '/login'; }}
-                    className="text-sm font-medium text-gray-500 hover:text-red-600 transition-colors"
-                >
-                    Log Out
-                </button>
-            </header>
+  const handleLogout = () => {
+    localStorage.removeItem("user_id");
+    window.dispatchEvent(new Event("storage"));
+    window.location.href = "/login";
+  };
 
-            <main className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* Left Column: Panic Button & Status */}
-                <div className="lg:col-span-5 space-y-6">
-                    <div className="bg-white p-8 rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 flex flex-col items-center justify-center min-h-[400px]">
-                         <h2 className="text-lg font-bold text-gray-400 uppercase tracking-widest mb-8">Emergency Trigger</h2>
-                         <PanicButton onEmergencyStart={handleEmergencyStart} />
-                         <p className="text-gray-400 text-xs mt-8">GPS Location will be shared with responders.</p>
-                    </div>
-                    
-                    {/* Medical Summary Card */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-bold text-gray-800">Medical ID</h3>
-                            <button className="text-blue-600 text-xs font-bold uppercase">Edit</button>
-                        </div>
-                        {history ? (
-                            <div className="space-y-3 text-sm">
-                                <div className="flex justify-between border-b border-gray-50 pb-2">
-                                    <span className="text-gray-500">Blood Type</span> 
-                                    <span className="font-mono font-bold bg-gray-100 px-2 rounded">{history.blood_type || 'N/A'}</span>
-                                </div>
-                                <div>
-                                    <span className="text-gray-500 block mb-1">Allergies</span> 
-                                    <span className="font-medium text-gray-800">{history.allergies || 'None recorded'}</span>
-                                </div>
-                                <div>
-                                    <span className="text-gray-500 block mb-1">Conditions</span> 
-                                    <span className="font-medium text-gray-800">{history.conditions || 'None recorded'}</span>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="text-gray-400 text-sm italic">Loading info...</div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Right Column: Chat Interface */}
-                <div className="lg:col-span-7 h-full min-h-[500px]">
-                    <ChatWindow mode={mode} setMode={setMode} onAction={handleAction} />
-                </div>
-            </main>
-            
-            <CPRMetronome isActive={cprActive} onClose={() => setCprActive(false)} />
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+      <header className="border-b border-border backdrop-blur-lg sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 bg-gradient-to-br from-accent to-accent-dark rounded-lg flex items-center justify-center">
+                <Heart className="text-white" size={24} />
+              </div>
+              <h1 className="text-2xl font-bold text-text-primary">
+                Sanjeevni
+              </h1>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 text-text-secondary hover:text-accent transition-colors duration-200 font-medium"
+            >
+              <LogOut size={18} />
+              <span className="hidden sm:inline">Log Out</span>
+            </button>
+          </div>
         </div>
-    );
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 md:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+          {/* Left Column: Panic Button & Medical Info */}
+          <div className="lg:col-span-2 space-y-6 animate-slide-left">
+            {/* Emergency Trigger */}
+            <div className="glass-primary p-8 rounded-2xl card-elevated flex flex-col items-center justify-center min-h-[450px]">
+              <div className="mb-8 text-center">
+                <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-widest mb-4">
+                  Emergency Trigger
+                </h2>
+                <p className="text-xs text-text-secondary/70">
+                  Press the button below in case of emergency
+                </p>
+              </div>
+              <PanicButton onEmergencyStart={handleEmergencyStart} />
+              <p className="text-xs text-text-secondary mt-8 text-center max-w-xs">
+                Your GPS location will be shared with emergency responders and
+                saved to your profile.
+              </p>
+            </div>
+
+            {/* Medical Summary Card */}
+            <div className="glass-primary p-6 rounded-2xl card-elevated">
+              <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-2">
+                  <AlertCircle size={20} className="text-accent" />
+                  <h3 className="font-bold text-text-primary">Medical ID</h3>
+                </div>
+                <button className="text-accent hover:text-accent-dark text-xs font-bold uppercase transition-colors">
+                  Edit
+                </button>
+              </div>
+              {history ? (
+                <div className="space-y-4 text-sm">
+                  <div className="bg-slate-900/50 p-3 rounded-lg">
+                    <span className="text-text-secondary text-xs uppercase tracking-wide block mb-1">
+                      Blood Type
+                    </span>
+                    <span className="font-mono font-bold text-accent">
+                      {history.blood_type || "Not Set"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-text-secondary text-xs uppercase tracking-wide block mb-1">
+                      Allergies
+                    </span>
+                    <span className="text-text-primary">
+                      {history.allergies || "None recorded"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-text-secondary text-xs uppercase tracking-wide block mb-1">
+                      Conditions
+                    </span>
+                    <span className="text-text-primary">
+                      {history.conditions || "None recorded"}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-text-secondary text-sm italic animate-pulse">
+                  Loading medical info...
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Column: Chat Interface */}
+          <div className="lg:col-span-3 h-full min-h-[600px] animate-slide-right">
+            <ChatWindow mode={mode} setMode={setMode} onAction={handleAction} />
+          </div>
+        </div>
+      </main>
+
+      <CPRMetronome isActive={cprActive} onClose={() => setCprActive(false)} />
+    </div>
+  );
 };
 export default Dashboard;
