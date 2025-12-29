@@ -1,58 +1,68 @@
-# mahagathbandhan-hackxios
+# Kiro Emergency Response App
 
-Full-stack application with React frontend and Express backend.
+A minimalist emergency response web application with a Panic Button and dual-mode medical chatbot.
 
 ## Project Structure
 
-```
-├── frontend/          # React app with Tailwind CSS
-└── backend/           # Express.js server
-```
+- **frontend/**: React + Vite + Tailwind CSS application.
+- **backend/**: Flask application with SQLite and Azure OpenAI integration.
 
-## Frontend
+## Setup Instructions
 
-React application built with:
-- Vite (build tool)
-- Tailwind CSS (styling)
-- JavaScript (no TypeScript)
+### Prerequisites
+- Node.js (v18+)
+- Python (v3.10+)
 
-### Setup
-```bash
-cd frontend
-npm install
-npm run dev
-```
+### 1. Backend Setup
 
-See [frontend/README.md](frontend/README.md) for more details.
-
-## Backend
-
-Express.js server with basic REST API setup.
-
-### Setup
+Navigate to the `backend` directory:
 ```bash
 cd backend
-npm install
-npm start
 ```
 
-See [backend/README.md](backend/README.md) for more details.
+Install Python dependencies:
+```bash
+pip install -r requirements.txt
+```
 
-## Development
+Run the Flask server:
+```bash
+python app.py
+```
+The backend runs on `http://localhost:5000`.
 
-To run both frontend and backend simultaneously:
+*Note: The app is configured with a simulation mode by default. To use real Azure OpenAI models, create a `.env` file in the `backend/` folder with your keys:*
+```env
+AZURE_OPENAI_ENDPOINT=https://your-endpoint.openai.azure.com/
+AZURE_OPENAI_API_KEY=your-api-key
+```
 
-1. Terminal 1 (Frontend):
-   ```bash
-   cd frontend
-   npm run dev
-   ```
+### 2. Frontend Setup
 
-2. Terminal 2 (Backend):
-   ```bash
-   cd backend
-   npm start
-   ```
+Open a new terminal and navigate to the `frontend` directory:
+```bash
+cd frontend
+```
 
-Frontend will be available at: `http://localhost:5173`
-Backend will be available at: `http://localhost:3000`
+Install Node dependencies:
+```bash
+npm install
+```
+
+Start the development server:
+```bash
+npm run dev
+```
+The frontend runs on `http://localhost:5173`.
+
+## Features
+- **Panic Button:** One-click emergency trigger sharing simulated GPS location.
+- **Medical Chatbot:** Switches between "Emergency Guidance" (Llama3) and "General Health" (Dr. Samantha) modes.
+- **CPR Metronome:** Visual and auditory guide for CPR compressions (100-120 BPM).
+- **Medical History:** Secure storage of allergies and conditions.
+
+## Usage
+1. Register/Login.
+2. Use the Dashboard to view status.
+3. Click "PANIC" to simulate an emergency.
+4. Interact with the chatbot for guidance.

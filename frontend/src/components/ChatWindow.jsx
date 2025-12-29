@@ -1,0 +1,174 @@
+import React, { useState, useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
+import { Send, User, Bot, Activity } from 'lucide-react';
+
+const ChatWindow = ({ mode, setMode, onAction }) => {
+    const [messages, setMessages] = useState([]);
+    const [input, setInput] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [currentOptions, setCurrentOptions] = useState([]);
+    const bottomRef = useRef(null);
+    const userId = localStorage.getItem('user_id');
+
+    useEffect(() => {
+        if (mode === 'emergency') {
+            setMessages(prev => [...prev, { role: 'assistant', content: "EMERGENCY PROTOCOL INITIATED. \nI am switching to the Medichat-Llama3-8B model for rapid response. \nIs the patient conscious?", model: 'System' }]);
+            setCurrentOptions(['Yes', 'No']);
+        } else if (messages.length === 0) {
+            setMessages([{ role: 'assistant', content: "Hello! I'm Dr. Samantha. How can I help you today?", model: 'sethuiyer/Dr_Samantha-7b' }]);
+        }
+    }, [mode]);
+
+    useEffect(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages, isLoading, currentOptions]);
+
+    const sendMessage = async (text) => {
+        if (!text.trim()) return;
+
+        const userMsg = { role: 'user', content: text };
+        setMessages(prev => [...prev, userMsg]);
+        setInput('');
+        setIsLoading(true);
+        setCurrentOptions([]); // Clear options while loading
+
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: text,
+                    mode: mode,
+                    user_id: userId,
+                    history: messages.map(m => ({role: m.role, content: m.content}))
+                }),
+            });
+
+            if (!response.ok) throw new Error('Network response was not ok');
+
+            const suggestedAction = response.headers.get('X-Suggested-Action');
+            const modelName = response.headers.get('X-Model');
+
+            if (suggestedAction) {
+                onAction(suggestedAction);
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let botMsgContent = '';
+
+            setMessages(prev => [...prev, { role: 'assistant', content: '', model: modelName }]);
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                
+                const chunk = decoder.decode(value, { stream: true });
+                botMsgContent += chunk;
+                
+                // Parse Options Pattern: [OPTIONS: Opt1 | Opt2]
+                let displayContent = botMsgContent;
+                const optionsMatch = botMsgContent.match(/\[OPTIONS: (.*?)\]/);
+                
+                if (optionsMatch) {
+                    const optionsStr = optionsMatch[1];
+                    const opts = optionsStr.split('|').map(o => o.trim());
+                    setCurrentOptions(opts);
+                    // Hide the options tag from the message bubble
+                    displayContent = botMsgContent.replace(optionsMatch[0], '');
+                }
+
+                setMessages(prev => {
+                    const newMessages = [...prev];
+                    const lastMsg = newMessages[newMessages.length - 1];
+                    if (lastMsg.role === 'assistant') {
+                        lastMsg.content = displayContent;
+                    }
+                    return newMessages;
+                });
+            }
+
+        } catch (err) {
+            console.error(err);
+            setMessages(prev => [...prev, { role: 'assistant', content: "Network Error. Please verify your connection." }]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleQuickReply = (text) => {
+        sendMessage(text);
+    };
+
+    return (
+        <div className={`flex flex-col h-[600px] border rounded-xl overflow-hidden shadow-lg bg-white transition-colors duration-500 ${mode === 'emergency' ? 'border-red-500 border-2 shadow-red-100' : 'border-gray-200'}`}>
+            <div className={`p-4 ${mode === 'emergency' ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'} flex justify-between items-center transition-colors duration-500`}>
+                <h3 className="font-bold flex items-center gap-2">
+                    {mode === 'emergency' ? <Activity size={20}/> : <Bot size={20}/>}
+                    {mode === 'emergency' ? 'EMERGENCY GUIDANCE' : 'Medical Assistant'}
+                </h3>
+                {mode === 'emergency' && (
+                     <button onClick={() => setMode('general')} className="text-xs bg-white/20 px-2 py-1 rounded hover:bg-white/30">End Emergency</button>
+                )}
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                {messages.map((msg, idx) => (
+                    <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[85%] p-3 rounded-2xl shadow-sm ${ 
+                            msg.role === 'user' 
+                                ? 'bg-blue-600 text-white rounded-br-none' 
+                                : (mode === 'emergency' && msg.role === 'assistant' ? 'bg-red-100 text-gray-900 rounded-bl-none border border-red-200 font-medium' : 'bg-white text-gray-800 rounded-bl-none border border-gray-100')
+                        }`}>
+                            <div className="text-sm md:text-base leading-relaxed markdown-body">
+                                <ReactMarkdown>{msg.content}</ReactMarkdown>
+                            </div>
+                            {msg.model && <p className="text-[10px] mt-2 opacity-60 text-right uppercase tracking-wider">{msg.model}</p>}
+                        </div>
+                    </div>
+                ))}
+                {isLoading && messages[messages.length-1]?.role !== 'assistant' && (
+                    <div className="flex justify-start">
+                         <div className="bg-white p-3 rounded-2xl rounded-bl-none border border-gray-100 text-gray-400 text-sm">
+                            Thinking...
+                         </div>
+                    </div>
+                )}
+                <div ref={bottomRef} />
+            </div>
+
+            {/* Dynamic Options for Emergency */}
+            {mode === 'emergency' && !isLoading && currentOptions.length > 0 && (
+                <div className="p-3 bg-white border-t border-red-100 flex gap-2 overflow-x-auto scrollbar-hide">
+                    {currentOptions.map((opt, idx) => (
+                        <button key={idx} onClick={() => handleQuickReply(opt)} className="whitespace-nowrap px-4 py-2 bg-red-50 border border-red-100 rounded-full text-sm font-bold text-red-600 hover:bg-red-100 active:scale-95 transition-transform">
+                            {opt}
+                        </button>
+                    ))}
+                </div>
+            )}
+
+            <div className="p-4 border-t bg-white flex gap-2">
+                <input 
+                    type="text" 
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && sendMessage(input)}
+                    placeholder={mode === 'emergency' ? "Respond here..." : "Type your health query..."}
+                    className="flex-1 border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                />
+                <button 
+                    onClick={() => sendMessage(input)}
+                    disabled={isLoading}
+                    className={`p-3 rounded-xl text-white shadow-md active:scale-95 transition-transform ${mode === 'emergency' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+                >
+                    <Send size={20} />
+                </button>
+            </div>
+        </div>
+    );
+};
+
+export default ChatWindow;
