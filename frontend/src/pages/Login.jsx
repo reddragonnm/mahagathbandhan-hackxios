@@ -24,7 +24,7 @@ const Login = ({ setUser }) => {
         <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
             <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
                 <h2 className="text-3xl font-black mb-2 text-center">Welcome Back</h2>
-                <p className="text-center text-gray-500 mb-8">Access your Kiro dashboard</p>
+                <p className="text-center text-gray-500 mb-8">Access your SanjeevniAI dashboard</p>
                 {error && <div className="bg-red-50 text-red-600 p-3 rounded mb-4 text-sm font-medium text-center">{error}</div>}
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>

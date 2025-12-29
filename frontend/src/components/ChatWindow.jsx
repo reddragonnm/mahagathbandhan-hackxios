@@ -12,7 +12,7 @@ const ChatWindow = ({ mode, setMode, onAction }) => {
 
     useEffect(() => {
         if (mode === 'emergency') {
-            setMessages(prev => [...prev, { role: 'assistant', content: "EMERGENCY PROTOCOL INITIATED. \nI am switching to the Medichat-Llama3-8B model for rapid response. \nIs the patient conscious?", model: 'System' }]);
+            setMessages(prev => [...prev, { role: 'assistant', content: "EMERGENCY PROTOCOL INITIATED. \nIs the patient conscious?", model: 'System' }]);
             setCurrentOptions(['Yes', 'No']);
         } else if (messages.length === 0) {
             setMessages([{ role: 'assistant', content: "Hello! I'm Dr. Samantha. How can I help you today?", model: 'sethuiyer/Dr_Samantha-7b' }]);
@@ -58,6 +58,7 @@ const ChatWindow = ({ mode, setMode, onAction }) => {
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let botMsgContent = '';
+            let metronomeTriggered = false;
 
             setMessages(prev => [...prev, { role: 'assistant', content: '', model: modelName }]);
 
@@ -68,14 +69,27 @@ const ChatWindow = ({ mode, setMode, onAction }) => {
                 const chunk = decoder.decode(value, { stream: true });
                 botMsgContent += chunk;
                 
+                // Trigger Metronome if the bot says so (client-side detection)
+                if (!metronomeTriggered && botMsgContent.toLowerCase().includes("starting metronome")) {
+                    onAction('start_metronome');
+                    metronomeTriggered = true;
+                }
+
                 // Parse Options Pattern: [OPTIONS: Opt1 | Opt2]
                 let displayContent = botMsgContent;
-                const optionsMatch = botMsgContent.match(/\[OPTIONS: (.*?)\]/);
+                // Match with [\s\S] to handle potential newlines from the model
+                // Relaxed regex: Case insensitive, optional space after colon, optional closing bracket (handles truncation)
+                const optionsMatch = botMsgContent.match(/\[OPTIONS:?\s*([\s\S]*?)(?:\]|$)/i);
                 
                 if (optionsMatch) {
                     const optionsStr = optionsMatch[1];
-                    const opts = optionsStr.split('|').map(o => o.trim());
-                    setCurrentOptions(opts);
+                    // Clean up newlines and split
+                    const opts = optionsStr.replace(/\n/g, '').split('|').map(o => o.trim()).filter(o => o.length > 0);
+                    
+                    if (opts.length > 0) {
+                         setCurrentOptions(opts);
+                    }
+                    
                     // Hide the options tag from the message bubble
                     displayContent = botMsgContent.replace(optionsMatch[0], '');
                 }
@@ -110,7 +124,16 @@ const ChatWindow = ({ mode, setMode, onAction }) => {
                     {mode === 'emergency' ? 'EMERGENCY GUIDANCE' : 'Medical Assistant'}
                 </h3>
                 {mode === 'emergency' && (
-                     <button onClick={() => setMode('general')} className="text-xs bg-white/20 px-2 py-1 rounded hover:bg-white/30">End Emergency</button>
+                     <button 
+                        onClick={() => {
+                            setMode('general');
+                            setMessages([{ role: 'assistant', content: "Hello! I'm Dr. Samantha. How can I help you today?", model: 'sethuiyer/Dr_Samantha-7b' }]);
+                            setCurrentOptions([]);
+                        }} 
+                        className="text-xs bg-white/20 px-2 py-1 rounded hover:bg-white/30"
+                    >
+                        End Emergency
+                    </button>
                 )}
             </div>
 
@@ -125,7 +148,6 @@ const ChatWindow = ({ mode, setMode, onAction }) => {
                             <div className="text-sm md:text-base leading-relaxed markdown-body">
                                 <ReactMarkdown>{msg.content}</ReactMarkdown>
                             </div>
-                            {msg.model && <p className="text-[10px] mt-2 opacity-60 text-right uppercase tracking-wider">{msg.model}</p>}
                         </div>
                     </div>
                 ))}

@@ -6,7 +6,11 @@ const Signup = () => {
     const [formData, setFormData] = useState({
         username: '',
         password: '',
-        confirmPassword: ''
+        confirmPassword: '',
+        blood_type: '',
+        allergies: '',
+        conditions: '',
+        medications: ''
     });
     const [error, setError] = useState('');
     const navigate = useNavigate();
@@ -25,7 +29,11 @@ const Signup = () => {
         try {
             await axios.post('/api/signup', { 
                 username: formData.username, 
-                password: formData.password 
+                password: formData.password,
+                blood_type: formData.blood_type,
+                allergies: formData.allergies,
+                conditions: formData.conditions,
+                medications: formData.medications
             });
             // Auto login or redirect to login
             alert("Account created! Please login.");
@@ -37,9 +45,9 @@ const Signup = () => {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-            <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
+            <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md my-8">
                 <h2 className="text-3xl font-black mb-2 text-center">Create Account</h2>
-                <p className="text-center text-gray-500 mb-8">Join Kiro Response</p>
+                <p className="text-center text-gray-500 mb-8">Join SanjeevniAI Response</p>
                 {error && <div className="bg-red-50 text-red-600 p-3 rounded mb-4 text-sm font-medium text-center">{error}</div>}
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
@@ -54,7 +62,32 @@ const Signup = () => {
                         <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Confirm Password</label>
                         <input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-black outline-none bg-gray-50" required />
                     </div>
-                    <button type="submit" className="w-full bg-black text-white p-4 rounded-lg font-bold hover:bg-gray-800 transition-colors shadow-lg">Sign Up</button>
+                    
+                    <div className="pt-4 border-t border-gray-100">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Medical Profile (Optional)</p>
+                        <div className="space-y-3">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Blood Type</label>
+                                    <input type="text" name="blood_type" value={formData.blood_type} onChange={handleChange} placeholder="e.g. O+" className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-black outline-none bg-gray-50" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Allergies</label>
+                                    <input type="text" name="allergies" value={formData.allergies} onChange={handleChange} placeholder="e.g. Peanuts" className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-black outline-none bg-gray-50" />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Conditions</label>
+                                <input type="text" name="conditions" value={formData.conditions} onChange={handleChange} placeholder="e.g. Asthma, Diabetes" className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-black outline-none bg-gray-50" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Medications</label>
+                                <input type="text" name="medications" value={formData.medications} onChange={handleChange} placeholder="e.g. Insulin" className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-black outline-none bg-gray-50" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" className="w-full bg-black text-white p-4 rounded-lg font-bold hover:bg-gray-800 transition-colors shadow-lg mt-6">Sign Up</button>
                 </form>
                 <p className="mt-6 text-center text-sm text-gray-600">
                     Already have an account? <Link to="/login" className="text-blue-600 font-bold hover:underline">Login</Link>

@@ -16,14 +16,14 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 CORS(app, expose_headers=["X-Suggested-Action", "X-Model"])
 
-# Hugging Face Inference API Setup
-HF_TOKEN = os.getenv("HF_TOKEN")
-BASE_URL = "https://router.huggingface.co/v1"
+# GitHub Models Inference API Setup
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+BASE_URL = "https://models.inference.ai.azure.com"
 
 # Initialize client
 client = OpenAI(
     base_url=BASE_URL,
-    api_key=HF_TOKEN
+    api_key=GITHUB_TOKEN
 )
 
 # --- Models ---
@@ -46,9 +46,8 @@ def select_model(message, mode):
     msg_lower = message.lower()
     emergency_keywords = ["emergency", "help", "unconscious", "not breathing", "cpr", "bleeding", "ambulance"]
     
-    # Using the same model for all modes as it is confirmed working with the provided configuration.
-    # We can differentiate behavior via system prompts.
-    return "sethuiyer/Medichat-Llama3-8B:featherless-ai"
+    # Using Meta-Llama-3.1-8B-Instruct via GitHub Models
+    return "Meta-Llama-3.1-8B-Instruct"
 
 # --- Routes ---
 
@@ -67,6 +66,17 @@ def signup():
     hashed_pw = generate_password_hash(password)
     new_user = User(username=username, password_hash=hashed_pw)
     db.session.add(new_user)
+    db.session.flush() # Flush to get the new_user.id
+    
+    # Add initial medical history
+    new_history = MedicalHistory(
+        user_id=new_user.id,
+        allergies=data.get('allergies', ''),
+        conditions=data.get('conditions', ''),
+        blood_type=data.get('blood_type', ''),
+        medications=data.get('medications', '')
+    )
+    db.session.add(new_history)
     db.session.commit()
     
     return jsonify({"message": "User created successfully"}), 201
@@ -138,15 +148,16 @@ def chat():
     system_prompt = "You are a helpful medical assistant."
     if mode == 'emergency':
         system_prompt = (
-            "You are an emergency response assistant. YOUR GOAL: Guide the user through a medical emergency with simple, short steps.\n"
+            "You are an emergency response assistant. CRITICAL CONTEXT: Emergency services have been notified and are on the way. YOUR GOAL: Guide the user (first responder) through immediate life-saving steps until help arrives.\n"
             "RULES:\n"
-            "1. Ask ONLY ONE question at a time.\n"
-            "2. Keep questions extremely short and clear.\n"
-            "3. At the end of every response, strictly provide valid user choices in this format: [OPTIONS: Choice 1 | Choice 2].\n"
+            "1. RESPONSE STRUCTURE: [Actionable Advice] + [Next Question].\n"
+            "   - First, give ONE clear, short instruction on what to do NOW based on the user's input (e.g., 'Lay them on their back,' 'Apply pressure').\n"
+            "   - Then, ask ONE simple Yes/No question to determine the next step.\n"
+            "2. Keep it extremely short. No long paragraphs.\n"
+            "3. At the end of every response, strictly provide valid user choices in this format: [OPTIONS: Choice 1 | Choice 2]. Do NOT add newlines inside the brackets.\n"
             "4. If CPR is needed, ask if they want a metronome. If they say yes, say 'Starting metronome' and STOP. Do NOT type 'beep', 'tick', or simulate the sound.\n"
             "5. Do not simulate the user.\n"
-            "6. Focus on 'Yes', 'No', or simple keywords.\n"
-            "Example: 'Is the patient conscious? [OPTIONS: Yes | No]'"
+            "Example: 'Apply direct pressure to the wound. Is the bleeding slowing down? [OPTIONS: Yes | No]'"
         )
     elif mode == 'general':
          system_prompt = "You are Dr. Samantha, a helpful conversational AI for general health queries."
@@ -164,8 +175,8 @@ def chat():
         suggested_action = "start_metronome"
 
     try:
-        # Check if HF_TOKEN is available for real API calls
-        if not HF_TOKEN:
+        # Check if GITHUB_TOKEN is available for real API calls
+        if not GITHUB_TOKEN:
              # --- SIMULATION LOGIC (Non-streaming fallback for now) ---
             response_text = f"[{model_name}]: "
             # ... (Sim logic omitted for brevity, keeping simple return for sim)
@@ -174,14 +185,29 @@ def chat():
 
         # Real API Call
         messages = [{"role": "system", "content": system_prompt}]
+        
+        # Append history if available
+        if history_context:
+            for msg in history_context:
+                # Filter out system messages or invalid roles if any, keep user/assistant
+                if msg.get('role') in ['user', 'assistant']:
+                    # Ensure content is string
+                    messages.append({"role": msg['role'], "content": str(msg['content'])})
+
         messages.append({"role": "user", "content": message})
+
+        # Reinforce formatting for emergency mode at the very end of context
+        if mode == 'emergency':
+            messages.append({"role": "system", "content": "REMINDER: Keep response short. YOU MUST END WITH [OPTIONS: Option A | Option B]. Do not add newlines inside the brackets."})
 
         def generate():
             stream = client.chat.completions.create(
                 model=model_name, 
                 messages=messages,
                 stream=True,
-                stop=["\nUser:", "<|eot_id|>", "User:", "\n\n"]
+                stop=["\nUser:", "<|eot_id|>", "User:"],
+                max_tokens=1000,
+                temperature=0.3
             )
             for chunk in stream:
                 if chunk.choices[0].delta.content:
