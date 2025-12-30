@@ -73,9 +73,6 @@ const ChatWindow = ({ mode, setMode, onAction }) => {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let botMsgContent = "";
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let botMsgContent = "";
       let metronomeTriggered = false;
 
       setMessages((prev) => [

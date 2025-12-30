@@ -56,11 +56,6 @@ const CPRMetronome = ({ isActive, onClose }) => {
     setIsPlaying(!isPlaying);
   };
 
-  const handleStop = () => {
-    setIsRunning(false);
-    setCount(0);
-    onClose();
-  };
   const handleClose = () => {
     setIsPlaying(false);
     setCount(0);

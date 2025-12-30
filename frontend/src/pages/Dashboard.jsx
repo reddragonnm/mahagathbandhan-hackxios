@@ -11,10 +11,6 @@ const Dashboard = () => {
   const [mode, setMode] = useState("general");
   const [cprActive, setCprActive] = useState(false);
   const [history, setHistory] = useState(null);
-  const userId = localStorage.getItem("user_id");
-  const [mode, setMode] = useState("general");
-  const [cprActive, setCprActive] = useState(false);
-  const [history, setHistory] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
     blood_type: "",
