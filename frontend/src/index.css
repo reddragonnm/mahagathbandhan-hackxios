@@ -1,6 +1,6 @@
-@import "tailwindcss/base";
-@import "tailwindcss/components";
-@import "tailwindcss/utilities";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* 1. Ensure Inter font is loaded or defined via Tailwind config */
 :root {
@@ -15,7 +15,6 @@
     --surface: #1a1a2e;
 }
 
-/* 2. Added @layer to ensure Tailwind can safely inject styles */
 @layer base {
     * {
         @apply transition-colors duration-300;
@@ -31,7 +30,6 @@
     }
 }
 
-/* 3. Standardized Custom Classes using @layer components */
 @layer components {
     /* Glass morphism effect */
     .glass {

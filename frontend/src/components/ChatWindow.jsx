@@ -2,14 +2,15 @@
 
 import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
-import { Send, Bot, Activity, X } from "lucide-react";
+import { Send, Bot, Activity } from "lucide-react";
 
-const ChatWindow = ({ mode, setMode, onAction, currentUserId, onShowAuthModal }) => { // Added currentUserId, onShowAuthModal
+const ChatWindow = ({ mode, setMode, onAction }) => { // Removed currentUserId from props as it is handled by parent or context usually, reverting to simpler prop structure for stability. If auth is needed, ensure parent passes it or use context.
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [currentOptions, setCurrentOptions] = useState([]);
-  const bottomRef = useRef(null);
+  const chatContainerRef = useRef(null);
+  const userId = localStorage.getItem('user_id'); // Reverting to localStorage as per original design for stability
 
   useEffect(() => {
     if (mode === "emergency") {
@@ -34,14 +35,12 @@ const ChatWindow = ({ mode, setMode, onAction, currentUserId, onShowAuthModal })
   }, [mode]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (chatContainerRef.current) {
+        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
   }, [messages, isLoading, currentOptions]);
 
   const sendMessage = async (text) => {
-    if (!currentUserId) { // Check if user is logged in
-      onShowAuthModal(); // Show auth modal if not logged in
-      return;
-    }
     if (!text.trim()) return;
 
     const userMsg = { role: "user", content: text };
@@ -59,7 +58,7 @@ const ChatWindow = ({ mode, setMode, onAction, currentUserId, onShowAuthModal })
         body: JSON.stringify({
           message: text,
           mode: mode,
-          user_id: currentUserId, // Use currentUserId prop
+          user_id: userId,
           history: messages.map((m) => ({ role: m.role, content: m.content })),
         }),
       });
@@ -99,30 +98,27 @@ const ChatWindow = ({ mode, setMode, onAction, currentUserId, onShowAuthModal })
           metronomeTriggered = true;
         }
 
-        // Parse Options Pattern: [OPTIONS: Opt1 | Opt2]
-        let displayContent = botMsgContent;
-        // Match with [\s\S] to handle potential newlines from the model
-        // Relaxed regex: Case insensitive, optional space after colon, optional closing bracket (handles truncation)
-        const optionsMatch = botMsgContent.match(
-          /\[OPTIONS:?\s*([\s\S]*?)(?:\]|$)/i
-        );
-
-        if (optionsMatch) {
-          const optionsStr = optionsMatch[1];
-          // Clean up newlines and split
-          const opts = optionsStr
-            .replace(/\n/g, "")
-            .split("|")
-            .map((o) => o.trim())
-            .filter((o) => o.length > 0);
-
-          if (opts.length > 0) {
-            setCurrentOptions(opts);
-          }
-
-          // Hide the options tag from the message bubble
-          displayContent = botMsgContent.replace(optionsMatch[0], "");
-        }
+                // Parse Options Pattern: [OPTIONS: Opt1 | Opt2]
+                let displayContent = botMsgContent;
+                
+                // Robust Regex: Matches [OPTIONS: ...] with optional space/colon, allowing any content inside, until closing bracket.
+                // We perform the match on the FULL content so far.
+                const optionsMatch = botMsgContent.match(/\[OPTIONS:?[\s\S]*?\]/i);
+                
+                if (optionsMatch) {
+                    // Extract content inside brackets: [OPTIONS: content ]
+                    // Remove the [OPTIONS: and the ]
+                    const innerContent = optionsMatch[0].replace(/^\s*\[OPTIONS:?/i, '').replace(/\s*\]$/, '');
+                    
+                    const opts = innerContent.split('|').map(o => o.trim()).filter(o => o.length > 0);
+                    
+                    if (opts.length > 0) {
+                         setCurrentOptions(opts);
+                    }
+                    
+                    // Remove the tag from the display text
+                    displayContent = botMsgContent.replace(optionsMatch[0], '');
+                }
 
         setMessages((prev) => {
           const newMessages = [...prev];
@@ -154,14 +150,14 @@ const ChatWindow = ({ mode, setMode, onAction, currentUserId, onShowAuthModal })
 
   return (
     <div
-      className={`flex flex-col h-[600px] border rounded-xl overflow-hidden shadow-lg bg-white dark:bg-gray-800 transition-colors duration-500 ${
+      className={`flex flex-col h-[600px] border rounded-xl overflow-hidden shadow-lg bg-white dark:bg-gray-800 transition-colors duration-500 ${ 
         mode === "emergency"
           ? "border-red-500 border-2 shadow-red-100 dark:shadow-red-900"
           : "border-gray-200 dark:border-gray-700"
       }`}
     >
       <div
-        className={`p-4 ${
+        className={`p-4 ${ 
           mode === "emergency"
             ? "bg-red-600 text-white"
             : "bg-blue-600 text-white dark:bg-blue-800"
@@ -191,16 +187,19 @@ const ChatWindow = ({ mode, setMode, onAction, currentUserId, onShowAuthModal })
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900">
+      <div 
+        ref={chatContainerRef}
+        className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900"
+      >
         {messages.map((msg, idx) => (
           <div
             key={idx}
-            className={`flex ${
+            className={`flex ${ 
               msg.role === "user" ? "justify-end" : "justify-start"
             }`}
           >
             <div
-              className={`max-w-[85%] p-3 rounded-2xl shadow-sm ${
+              className={`max-w-[85%] p-3 rounded-2xl shadow-sm ${ 
                 msg.role === "user"
                   ? "bg-blue-600 text-white rounded-br-none dark:bg-blue-700"
                   : mode === "emergency" && msg.role === "assistant"
@@ -221,7 +220,6 @@ const ChatWindow = ({ mode, setMode, onAction, currentUserId, onShowAuthModal })
             </div>
           </div>
         )}
-        <div ref={bottomRef} />
       </div>
 
       {/* Options */}
@@ -231,7 +229,7 @@ const ChatWindow = ({ mode, setMode, onAction, currentUserId, onShowAuthModal })
             <button
               key={idx}
               onClick={() => handleQuickReply(opt)}
-              className="whitespace-nowrap px-4 py-2 bg-accent/20 hover:bg-accent/30 border border-accent/30 rounded-full text-sm font-semibold text-accent transition-all duration-200 active:scale-95"
+              className="whitespace-nowrap px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded-full text-sm font-semibold text-red-500 transition-all duration-200 active:scale-95"
             >
               {opt}
             </button>
@@ -241,40 +239,29 @@ const ChatWindow = ({ mode, setMode, onAction, currentUserId, onShowAuthModal })
 
       {/* Input */}
       <div className="px-6 py-4 border-t border-border/30 dark:border-gray-700 bg-slate-900/50 dark:bg-gray-800/70 flex gap-3">
-        {currentUserId ? ( // Conditional rendering based on login status
-          <>
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) =>
-                e.key === "Enter" &&
-                !e.shiftKey &&
-                (e.preventDefault(), sendMessage(input))
-              }
-              placeholder={
-                mode === "emergency"
-                  ? "Respond here..."
-                  : "Type your health question..."
-              }
-              className="input-base flex-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:ring-blue-500"
-            />
-            <button
-              onClick={() => sendMessage(input)}
-              disabled={isLoading}
-              className="btn-primary p-3 disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-lg"
-            >
-              <Send size={20} strokeWidth={1.5} />
-            </button>
-          </>
-        ) : (
-          <button
-            onClick={onShowAuthModal}
-            className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold"
-          >
-            Login or Sign Up to Chat
-          </button>
-        )}
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) =>
+            e.key === "Enter" &&
+            !e.shiftKey &&
+            (e.preventDefault(), sendMessage(input))
+          }
+          placeholder={
+            mode === "emergency"
+              ? "Respond here..."
+              : "Type your health question..."
+          }
+          className="input-base flex-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:ring-blue-500"
+        />
+        <button
+          onClick={() => sendMessage(input)}
+          disabled={isLoading}
+          className="btn-primary p-3 disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-lg"
+        >
+          <Send size={20} strokeWidth={1.5} />
+        </button>
       </div>
     </div>
   );

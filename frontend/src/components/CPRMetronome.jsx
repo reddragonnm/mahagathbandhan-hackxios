@@ -6,42 +6,43 @@ const CPRMetronome = ({ isActive, onClose }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef(null);
 
-  // Initialize Audio on mount
-  useEffect(() => {
-    try {
-      const audio = new Audio("/metronome.mp3");
-      audio.preload = "auto";
-      audioRef.current = audio;
-    } catch (e) {
-      console.error("Failed to initialize audio", e);
-    }
+    // Initialize Audio on mount
+    useEffect(() => {
+        const audio = new Audio('/metronome.mp3');
+        audio.preload = 'auto';
+        audio.onerror = (e) => console.error("Audio Load Error:", e);
+        audioRef.current = audio;
 
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-      }
-    };
-  }, []);
+        return () => {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current.currentTime = 0;
+            }
+        };
+    }, []);
 
-  // Handle Timer & Playback
-  useEffect(() => {
-    let interval;
-    if (isPlaying) {
-      interval = setInterval(() => {
-        setCount((c) => c + 1);
-        if (audioRef.current) {
-          audioRef.current.currentTime = 0;
-          audioRef.current
-            .play()
-            .catch((err) => console.warn("Audio play error:", err));
+    // Handle Timer & Playback
+    useEffect(() => {
+        let interval;
+        if (isPlaying) {
+            // Play immediately on start
+            if (audioRef.current) {
+                audioRef.current.currentTime = 0;
+                audioRef.current.play().catch(err => console.error("Audio play error (immediate):", err));
+            }
+            
+            interval = setInterval(() => {
+                setCount(c => c + 1);
+                if (audioRef.current) {
+                    audioRef.current.currentTime = 0;
+                    audioRef.current.play().catch(err => console.error("Audio play error (interval):", err));
+                }
+            }, 550); // ~110 BPM
+        } else {
+            clearInterval(interval);
         }
-      }, 550); // ~110 BPM
-    } else {
-      clearInterval(interval);
-    }
-    return () => clearInterval(interval);
-  }, [isPlaying]);
+        return () => clearInterval(interval);
+    }, [isPlaying]);
 
   const handleStart = () => {
     if (!audioContextRef.current) {
