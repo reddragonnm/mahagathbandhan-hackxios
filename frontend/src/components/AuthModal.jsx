@@ -72,7 +72,7 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
               type="text"
               id="username"
               name="username"
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-white dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className="shadow appearance-none border rounded w-full py-2 px-3 bg-white text-gray-700 dark:text-white dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
@@ -86,7 +86,7 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
               type="password"
               id="password"
               name="password"
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-white dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className="shadow appearance-none border rounded w-full py-2 px-3 bg-white text-gray-700 dark:text-white dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -102,7 +102,7 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
                   type="password"
                   id="confirmPassword"
                   name="confirmPassword"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-white dark:bg-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
+                  className="shadow appearance-none border rounded w-full py-2 px-3 bg-white text-gray-700 dark:text-white dark:bg-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required={!isLogin}
@@ -117,7 +117,7 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
                   type="text"
                   id="allergies"
                   name="allergies"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-white dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  className="shadow appearance-none border rounded w-full py-2 px-3 bg-white text-gray-700 dark:text-white dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                   value={medicalInfo.allergies}
                   onChange={handleMedicalInfoChange}
                 />
@@ -130,7 +130,7 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
                   type="text"
                   id="conditions"
                   name="conditions"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-white dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  className="shadow appearance-none border rounded w-full py-2 px-3 bg-white text-gray-700 dark:text-white dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                   value={medicalInfo.conditions}
                   onChange={handleMedicalInfoChange}
                 />
@@ -143,7 +143,7 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
                   type="text"
                   id="blood_type"
                   name="blood_type"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-white dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  className="shadow appearance-none border rounded w-full py-2 px-3 bg-white text-gray-700 dark:text-white dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                   value={medicalInfo.blood_type}
                   onChange={handleMedicalInfoChange}
                 />
@@ -156,7 +156,7 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
                   type="text"
                   id="medications"
                   name="medications"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-white dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  className="shadow appearance-none border rounded w-full py-2 px-3 bg-white text-gray-700 dark:text-white dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                   value={medicalInfo.medications}
                   onChange={handleMedicalInfoChange}
                 />

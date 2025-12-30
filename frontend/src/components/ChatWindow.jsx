@@ -4,13 +4,15 @@ import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import { Send, Bot, Activity } from "lucide-react";
 
-const ChatWindow = ({ mode, setMode, onAction }) => { // Removed currentUserId from props as it is handled by parent or context usually, reverting to simpler prop structure for stability. If auth is needed, ensure parent passes it or use context.
+const ChatWindow = ({ mode, setMode, onAction, currentUserId, onShowAuthModal }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [currentOptions, setCurrentOptions] = useState([]);
   const chatContainerRef = useRef(null);
-  const userId = localStorage.getItem('user_id'); // Reverting to localStorage as per original design for stability
+  
+  // Use prop if available, fallback to localStorage if needed, but prop is preferred for reactivity
+  const userId = currentUserId || localStorage.getItem('user_id');
 
   useEffect(() => {
     if (mode === "emergency") {
@@ -239,29 +241,42 @@ const ChatWindow = ({ mode, setMode, onAction }) => { // Removed currentUserId f
 
       {/* Input */}
       <div className="px-6 py-4 border-t border-border/30 dark:border-gray-700 bg-slate-900/50 dark:bg-gray-800/70 flex gap-3">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) =>
-            e.key === "Enter" &&
-            !e.shiftKey &&
-            (e.preventDefault(), sendMessage(input))
-          }
-          placeholder={
-            mode === "emergency"
-              ? "Respond here..."
-              : "Type your health question..."
-          }
-          className="input-base flex-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:ring-blue-500"
-        />
-        <button
-          onClick={() => sendMessage(input)}
-          disabled={isLoading}
-          className="btn-primary p-3 disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-lg"
-        >
-          <Send size={20} strokeWidth={1.5} />
-        </button>
+        {userId ? (
+          <>
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) =>
+                e.key === "Enter" &&
+                !e.shiftKey &&
+                (e.preventDefault(), sendMessage(input))
+              }
+              placeholder={
+                mode === "emergency"
+                  ? "Respond here..."
+                  : "Type your health question..."
+              }
+              className="input-base flex-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:ring-blue-500"
+            />
+            <button
+              onClick={() => sendMessage(input)}
+              disabled={isLoading}
+              className="btn-primary p-3 disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-lg"
+            >
+              <Send size={20} strokeWidth={1.5} />
+            </button>
+          </>
+        ) : (
+          <div className="w-full flex items-center justify-center">
+            <button
+              onClick={onShowAuthModal}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors"
+            >
+              Login to Chat
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -37,7 +37,7 @@
     }
 
     .glass-primary {
-        @apply bg-slate-900/50 backdrop-blur-lg border border-slate-700/50;
+        @apply bg-white/80 dark:bg-slate-900/50 backdrop-blur-lg border border-gray-200 dark:border-slate-700/50;
     }
 
     .card-elevated {
@@ -60,8 +60,8 @@
 
     /* Input styles */
     .input-base {
-        @apply bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-3;
-        @apply text-slate-100 placeholder:text-slate-400/50;
+        @apply bg-white dark:bg-slate-900/50 border border-gray-300 dark:border-slate-700 rounded-lg px-4 py-3;
+        @apply text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-400/50;
         @apply focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent;
         @apply transition-all duration-200 appearance-none;
     }

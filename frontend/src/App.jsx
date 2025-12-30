@@ -2,6 +2,8 @@
 
 import { Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import { useState, useEffect } from "react";
 
 function App() {
@@ -16,9 +18,11 @@ function App() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-text-primary">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 text-gray-900 dark:text-text-primary transition-colors duration-300">
       <Routes>
         <Route path="/" element={<Dashboard />} />
+        <Route path="/login" element={<Login setUser={setUser} />} />
+        <Route path="/signup" element={<Signup />} />
       </Routes>
     </div>
   );

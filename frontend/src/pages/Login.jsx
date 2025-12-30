@@ -23,16 +23,16 @@ const Login = ({ setUser }) => {
     return (
         <div className="min-h-screen flex items-center justify-center p-4">
             <div className="glass-primary p-8 rounded-2xl shadow-2xl w-full max-w-md animate-fade-in">
-                <h2 className="text-3xl font-black mb-2 text-center text-white">Welcome Back</h2>
-                <p className="text-center text-slate-400 mb-8">Access your SanjeevniAI dashboard</p>
+                <h2 className="text-3xl font-black mb-2 text-center text-gray-900 dark:text-white">Welcome Back</h2>
+                <p className="text-center text-gray-500 dark:text-slate-400 mb-8">Access your SanjeevniAI dashboard</p>
                 {error && <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-3 rounded mb-4 text-sm font-medium text-center">{error}</div>}
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Username</label>
+                        <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1">Username</label>
                         <input type="text" value={username} onChange={e=>setUsername(e.target.value)} className="input-base w-full" required />
                     </div>
                     <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Password</label>
+                        <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1">Password</label>
                         <input type="password" value={password} onChange={e=>setPassword(e.target.value)} className="input-base w-full" required />
                     </div>
                     <button type="submit" className="btn-primary w-full shadow-lg shadow-red-900/20">Sign In</button>

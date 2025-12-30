@@ -6,7 +6,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from openai import OpenAI
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load .env from the same directory as this file
+load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev_secret_key')
@@ -21,10 +22,17 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 BASE_URL = "https://models.inference.ai.azure.com"
 
 # Initialize client
-client = OpenAI(
-    base_url=BASE_URL,
-    api_key=GITHUB_TOKEN
-)
+if GITHUB_TOKEN:
+    try:
+        client = OpenAI(
+            base_url=BASE_URL,
+            api_key=GITHUB_TOKEN
+        )
+    except Exception as e:
+        print(f"Failed to initialize OpenAI client: {e}")
+        client = None
+else:
+    client = None
 
 # --- Models ---
 class User(db.Model):
@@ -150,7 +158,7 @@ def chat():
         system_prompt = (
             "You are an emergency response assistant. CRITICAL CONTEXT: Emergency services have been notified and are on the way. YOUR GOAL: Guide the user (first responder) through immediate life-saving steps until help arrives.\n"
             "RULES:\n"
-            "1. RESPONSE STRUCTURE: [Actionable Advice] + [Next Question].\n"
+            "1. RESPONSE STRUCTURE: [Actionable Advice] + [Next Question).\n"
             "   - First, give ONE clear, short instruction on what to do NOW based on the user's input (e.g., 'Lay them on their back,' 'Apply pressure').\n"
             "   - Then, ask ONE simple Yes/No question to determine the next step.\n"
             "2. Keep it extremely short. No long paragraphs.\n"
@@ -174,57 +182,75 @@ def chat():
     if ("metronome" in msg_lower and "start" in msg_lower) or ("cpr" in msg_lower and "start" in msg_lower):
         suggested_action = "start_metronome"
 
-    try:
-        # Check if GITHUB_TOKEN is available for real API calls
-        if not GITHUB_TOKEN:
-             # --- SIMULATION LOGIC (Non-streaming fallback for now) ---
-            response_text = f"[{model_name}]: "
-            # ... (Sim logic omitted for brevity, keeping simple return for sim)
-            return jsonify({"response": "Simulation mode does not support streaming yet.", "model": model_name})
-
-
-        # Real API Call
-        messages = [{"role": "system", "content": system_prompt}]
+    # Define Simulation Fallback
+    def run_simulation(error_msg=None):
+        if error_msg:
+            print(f"Switching to simulation due to error: {error_msg}")
         
-        # Append history if available
-        if history_context:
-            for msg in history_context:
-                # Filter out system messages or invalid roles if any, keep user/assistant
-                if msg.get('role') in ['user', 'assistant']:
-                    # Ensure content is string
-                    messages.append({"role": msg['role'], "content": str(msg['content'])})
-
-        messages.append({"role": "user", "content": message})
-
-        # Reinforce formatting for emergency mode at the very end of context
-        if mode == 'emergency':
-            messages.append({"role": "system", "content": "REMINDER: Keep response short. YOU MUST END WITH [OPTIONS: Option A | Option B]. Do not add newlines inside the brackets."})
-
-        def generate():
-            stream = client.chat.completions.create(
-                model=model_name, 
-                messages=messages,
-                stream=True,
-                stop=["\nUser:", "<|eot_id|>", "User:"],
-                max_tokens=1000,
-                temperature=0.3
-            )
-            for chunk in stream:
-                if chunk.choices[0].delta.content:
-                    yield chunk.choices[0].delta.content
+        import time
+        def sim_generate():
+            response_text = "I am currently in simulation mode. The AI service is unavailable. In a real emergency, I would guide you through CPR or other procedures. [OPTIONS: Retry | Simulation Info]"
+            if mode == 'emergency':
+                    response_text = "Emergency Simulation: Ensure the scene is safe. Is the patient breathing? [OPTIONS: Yes | No]"
+            
+            # Yield chunks to simulate streaming
+            words = response_text.split(' ')
+            for word in words:
+                yield word + " "
+                time.sleep(0.05) # simulate typing speed
 
         return Response(
-            generate(), 
+            sim_generate(), 
             mimetype='text/plain', 
             headers={
                 "X-Suggested-Action": suggested_action if suggested_action else "",
-                "X-Model": model_name
+                "X-Model": f"{model_name} (Sim)"
             }
         )
-        
-    except Exception as e:
-        print(f"API Error: {e}")
-        return jsonify({"error": "Failed to get response from AI service."}), 500
+
+    # Attempt Real API Call
+    if client:
+        try:
+            messages = [{"role": "system", "content": system_prompt}]
+            
+            # Append history if available
+            if history_context:
+                for msg in history_context:
+                    if msg.get('role') in ['user', 'assistant']:
+                        messages.append({"role": msg['role'], "content": str(msg['content'])})
+
+            messages.append({"role": "user", "content": message})
+
+            if mode == 'emergency':
+                messages.append({"role": "system", "content": "REMINDER: Keep response short. YOU MUST END WITH [OPTIONS: Option A | Option B]. Do not add newlines inside the brackets."})
+
+            def generate():
+                stream = client.chat.completions.create(
+                    model=model_name, 
+                    messages=messages,
+                    stream=True,
+                    stop=["\nUser:", "<|eot_id|>", "User:"],
+                    max_tokens=1000,
+                    temperature=0.3
+                )
+                for chunk in stream:
+                    if chunk.choices[0].delta.content:
+                        yield chunk.choices[0].delta.content
+
+            return Response(
+                generate(), 
+                mimetype='text/plain', 
+                headers={
+                    "X-Suggested-Action": suggested_action if suggested_action else "",
+                    "X-Model": model_name
+                }
+            )
+            
+        except Exception as e:
+            return run_simulation(str(e))
+    
+    # If no client, use simulation
+    return run_simulation("No API Client initialized")
 
 if __name__ == '__main__':
     with app.app_context():
