@@ -2,17 +2,191 @@
 
 import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
-import { Send, Bot, Activity } from "lucide-react";
+import { Send, Bot, Activity, Mic, Volume2, VolumeX } from "lucide-react";
 
 const ChatWindow = ({ mode, setMode, onAction, currentUserId, onShowAuthModal }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [currentOptions, setCurrentOptions] = useState([]);
-  const chatContainerRef = useRef(null);
+  const [isListening, setIsListening] = useState(false);
+  const [voiceMode, setVoiceMode] = useState(false);
   
-  // Use prop if available, fallback to localStorage if needed, but prop is preferred for reactivity
+  const chatContainerRef = useRef(null);
+  const recognitionRef = useRef(null);
+  const messagesRef = useRef(messages);
+  const silenceTimerRef = useRef(null);
+
+  // Keep messagesRef in sync with messages state
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+  
   const userId = currentUserId || localStorage.getItem('user_id');
+
+  const sendMessage = async (text) => {
+    if (!text.trim()) return;
+
+    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+
+    const userMsg = { role: "user", content: text };
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
+    setIsLoading(true);
+    setCurrentOptions([]);
+
+    try {
+      const currentHistory = messagesRef.current.map((m) => ({ role: m.role, content: m.content }));
+      
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: text,
+          mode: mode,
+          user_id: userId,
+          history: currentHistory, 
+        }),
+      });
+
+      if (!response.ok) {console.log(response);throw new Error("Network response was not ok")};
+
+      const suggestedAction = response.headers.get("X-Suggested-Action");
+      const modelName = response.headers.get("X-Model");
+
+      if (suggestedAction) {
+        onAction(suggestedAction);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let botMsgContent = "";
+      let metronomeTriggered = false;
+
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "", model: modelName },
+      ]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        botMsgContent += chunk;
+
+        if (
+          !metronomeTriggered &&
+          botMsgContent.toLowerCase().includes("starting metronome")
+        ) {
+          onAction("start_metronome");
+          metronomeTriggered = true;
+        }
+
+        let displayContent = botMsgContent;
+        // Robust Regex: Matches [OPTIONS: ...] with optional space/colon, allowing any content inside, until closing bracket.
+        const optionsMatch = botMsgContent.match(/\[\s*OPTIONS\s*:?[\s\S]*?\]/i);
+        
+        if (optionsMatch) {
+            // Extract content inside brackets: [OPTIONS: content ]
+            // Remove the [OPTIONS: and the ]
+            const innerContent = optionsMatch[0].replace(/^\s*\[\s*OPTIONS\s*:?/i, '').replace(/\s*\]$/, '');
+            
+            const opts = innerContent.split('|').map(o => o.trim()).filter(o => o.length > 0);
+            
+            if (opts.length > 0) {
+                 setCurrentOptions(opts);
+            }
+            
+            // Remove the tag from the display text
+            displayContent = botMsgContent.replace(optionsMatch[0], '');
+        }
+
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          const lastMsg = newMessages[newMessages.length - 1];
+          if (lastMsg.role === "assistant") {
+            lastMsg.content = displayContent;
+          }
+          return newMessages;
+        });
+      }
+      
+      if (voiceModeRef.current) { 
+          let finalDisplay = botMsgContent;
+          const finalMatch = botMsgContent.match(/\[\s*OPTIONS\s*:?[\s\S]*?\]/i);
+          if (finalMatch) {
+             finalDisplay = botMsgContent.replace(finalMatch[0], '');
+          }
+          speak(finalDisplay);
+      }
+
+    } catch (err) {
+      console.error(err);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            "Connection error. Please verify your internet connection and try again.",
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const voiceModeRef = useRef(voiceMode);
+  useEffect(() => {
+      voiceModeRef.current = voiceMode;
+  }, [voiceMode]);
+
+  const sendMessageRef = useRef(sendMessage);
+  useEffect(() => {
+      sendMessageRef.current = sendMessage;
+  }, [sendMessage]);
+
+
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.lang = 'en-US';
+      recognitionRef.current.interimResults = true;
+
+      recognitionRef.current.onresult = (event) => {
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+
+        let fullTranscript = '';
+        for (let i = 0; i < event.results.length; ++i) {
+             fullTranscript += event.results[i][0].transcript;
+        }
+
+        setInput(fullTranscript);
+
+        silenceTimerRef.current = setTimeout(() => {
+             if (recognitionRef.current) recognitionRef.current.stop();
+             setIsListening(false);
+             if (fullTranscript.trim()) {
+                sendMessageRef.current(fullTranscript);
+             }
+        }, 2000);
+      };
+
+      recognitionRef.current.onerror = (event) => {
+        console.error("Speech recognition error", event.error);
+        setIsListening(false);
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      };
+
+      recognitionRef.current.onend = () => {
+         // Optionally handle end
+      };
+    }
+  }, []);
 
   useEffect(() => {
     if (mode === "emergency") {
@@ -42,107 +216,50 @@ const ChatWindow = ({ mode, setMode, onAction, currentUserId, onShowAuthModal })
     }
   }, [messages, isLoading, currentOptions]);
 
-  const sendMessage = async (text) => {
-    if (!text.trim()) return;
+  const speak = (text) => {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    
+    const cleanText = text.replace(/[*_#`]/g, ''); 
+    const utterance = new SpeechSynthesisUtterance(cleanText); 
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
 
-    const userMsg = { role: "user", content: text };
-    setMessages((prev) => [...prev, userMsg]);
-    setInput("");
-    setIsLoading(true);
-    setCurrentOptions([]);
+    // Attempt to select a more human-sounding female voice
+    const voices = window.speechSynthesis.getVoices();
+    const preferredVoices = [
+        "Google US English", // Chrome (Natural sounding)
+        "Microsoft Zira",    // Windows
+        "Samantha",          // macOS
+        "Google UK English Female"
+    ];
+    
+    const selectedVoice = voices.find(voice => 
+        preferredVoices.some(pref => voice.name.includes(pref))
+    ) || voices.find(voice => voice.name.toLowerCase().includes("female"));
 
-    try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: text,
-          mode: mode,
-          user_id: userId,
-          history: messages.map((m) => ({ role: m.role, content: m.content })),
-        }),
-      });
+    if (selectedVoice) {
+        utterance.voice = selectedVoice;
+    }
 
-      if (!response.ok) throw new Error("Network response was not ok");
+    window.speechSynthesis.speak(utterance);
+  };
 
-      const suggestedAction = response.headers.get("X-Suggested-Action");
-      const modelName = response.headers.get("X-Model");
-
-      if (suggestedAction) {
-        onAction(suggestedAction);
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let botMsgContent = "";
-      let metronomeTriggered = false;
-
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: "", model: modelName },
-      ]);
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        botMsgContent += chunk;
-
-        // Trigger Metronome if the bot says so (client-side detection)
-        if (
-          !metronomeTriggered &&
-          botMsgContent.toLowerCase().includes("starting metronome")
-        ) {
-          onAction("start_metronome");
-          metronomeTriggered = true;
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+        alert("Speech recognition is not supported in this browser.");
+        return;
+    }
+    if (isListening) {
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+        recognitionRef.current.stop();
+        setIsListening(false);
+        if (input.trim()) {
+            sendMessage(input);
         }
-
-                // Parse Options Pattern: [OPTIONS: Opt1 | Opt2]
-                let displayContent = botMsgContent;
-                
-                // Robust Regex: Matches [OPTIONS: ...] with optional space/colon, allowing any content inside, until closing bracket.
-                // We perform the match on the FULL content so far.
-                const optionsMatch = botMsgContent.match(/\[OPTIONS:?[\s\S]*?\]/i);
-                
-                if (optionsMatch) {
-                    // Extract content inside brackets: [OPTIONS: content ]
-                    // Remove the [OPTIONS: and the ]
-                    const innerContent = optionsMatch[0].replace(/^\s*\[OPTIONS:?/i, '').replace(/\s*\]$/, '');
-                    
-                    const opts = innerContent.split('|').map(o => o.trim()).filter(o => o.length > 0);
-                    
-                    if (opts.length > 0) {
-                         setCurrentOptions(opts);
-                    }
-                    
-                    // Remove the tag from the display text
-                    displayContent = botMsgContent.replace(optionsMatch[0], '');
-                }
-
-        setMessages((prev) => {
-          const newMessages = [...prev];
-          const lastMsg = newMessages[newMessages.length - 1];
-          if (lastMsg.role === "assistant") {
-            lastMsg.content = displayContent;
-          }
-          return newMessages;
-        });
-      }
-    } catch (err) {
-      console.error(err);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content:
-            "Connection error. Please verify your internet connection and try again.",
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
+    } else {
+        recognitionRef.current.start();
+        setIsListening(true);
     }
   };
 
@@ -169,24 +286,33 @@ const ChatWindow = ({ mode, setMode, onAction, currentUserId, onShowAuthModal })
           {mode === "emergency" ? <Activity size={20} /> : <Bot size={20} />}
           {mode === "emergency" ? "EMERGENCY GUIDANCE" : "Medical Assistant"}
         </h3>
-        {mode === "emergency" && (
-          <button
-            onClick={() => {
-              setMode("general");
-              setMessages([
-                {
-                  role: "assistant",
-                  content: "Hello! I'm Dr. Samantha. How can I help you today?",
-                  model: "sethuiyer/Dr_Samantha-7b",
-                },
-              ]);
-              setCurrentOptions([]);
-            }}
-            className="text-xs bg-white/20 px-2 py-1 rounded hover:bg-white/30"
-          >
-            End Emergency
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+            <button
+                onClick={() => setVoiceMode(!voiceMode)}
+                className={`p-1 rounded hover:bg-white/20 transition-colors ${voiceMode ? 'bg-white/20' : ''}`}
+                title={voiceMode ? "Mute Voice Output" : "Enable Voice Output"}
+            >
+                {voiceMode ? <Volume2 size={18} /> : <VolumeX size={18} />}
+            </button>
+            {mode === "emergency" && (
+            <button
+                onClick={() => {
+                setMode("general");
+                setMessages([
+                    {
+                    role: "assistant",
+                    content: "Hello! I'm Dr. Samantha. How can I help you today?",
+                    model: "sethuiyer/Dr_Samantha-7b",
+                    },
+                ]);
+                setCurrentOptions([]);
+                }}
+                className="text-xs bg-white/20 px-2 py-1 rounded hover:bg-white/30"
+            >
+                End Emergency
+            </button>
+            )}
+        </div>
       </div>
 
       <div 
@@ -243,6 +369,17 @@ const ChatWindow = ({ mode, setMode, onAction, currentUserId, onShowAuthModal })
       <div className="px-6 py-4 border-t border-border/30 dark:border-gray-700 bg-slate-900/50 dark:bg-gray-800/70 flex gap-3">
         {userId ? (
           <>
+            <button
+                onClick={toggleListening}
+                className={`p-3 rounded-lg transition-colors ${ 
+                    isListening 
+                    ? 'bg-red-500 text-white animate-pulse' 
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                }`}
+                title="Voice Input"
+            >
+                <Mic size={20} />
+            </button>
             <input
               type="text"
               value={input}
@@ -253,7 +390,9 @@ const ChatWindow = ({ mode, setMode, onAction, currentUserId, onShowAuthModal })
                 (e.preventDefault(), sendMessage(input))
               }
               placeholder={
-                mode === "emergency"
+                isListening 
+                ? "Listening..."
+                : mode === "emergency"
                   ? "Respond here..."
                   : "Type your health question..."
               }

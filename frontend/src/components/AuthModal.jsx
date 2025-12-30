@@ -50,7 +50,22 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
       }
       onClose();
     } catch (err) {
-      setError(err.response?.data?.error || 'An error occurred');
+      console.error("Auth Error:", err);
+      if (err.response) {
+        console.error("Response Status:", err.response.status);
+        console.error("Response Data:", err.response.data);
+      }
+      
+      let errorMessage = 'An error occurred';
+      if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      } else if (typeof err.response?.data === 'string' && err.response.data.includes('Proxy error')) {
+        errorMessage = "Backend connection failed. Please try again.";
+      } else if (err.message) {
+         errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
