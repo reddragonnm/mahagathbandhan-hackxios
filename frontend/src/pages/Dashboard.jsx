@@ -6,6 +6,7 @@ import ChatWindow from "../components/ChatWindow";
 import CPRMetronome from "../components/CPRMetronome";
 import axios from "axios";
 import { LogOut, Heart, AlertCircle } from "lucide-react";
+import ThemeToggle from "../components/ThemeToggle";
 
 const Dashboard = () => {
   const [mode, setMode] = useState("general");
@@ -58,21 +59,24 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-8">
       <header className="flex justify-between items-center mb-8 max-w-6xl mx-auto">
-        <h1 className="text-3xl font-black text-gray-900 tracking-tight">
+        <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">
           SanjeevniAI<span className="text-red-600">.</span>
         </h1>
-        <button
-          onClick={() => {
-            localStorage.removeItem("user_id");
-            window.dispatchEvent(new Event("storage"));
-            window.location.href = "/login";
-          }}
-          className="text-sm font-medium text-gray-500 hover:text-red-600 transition-colors"
-        >
-          Log Out
-        </button>
+        <div className="flex items-center gap-4">
+          <ThemeToggle />
+          <button
+            onClick={() => {
+              localStorage.removeItem("user_id");
+              window.dispatchEvent(new Event("storage"));
+              window.location.href = "/login";
+            }}
+            className="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-red-600 transition-colors"
+          >
+            Log Out
+          </button>
+        </div>
       </header>
 
       <main className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -85,19 +89,19 @@ const Dashboard = () => {
             />
           )}
 
-          <div className="bg-white p-8 rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 flex flex-col items-center justify-center min-h-[400px]">
-            <h2 className="text-lg font-bold text-gray-400 uppercase tracking-widest mb-8">
+          <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-xl shadow-gray-200/50 dark:shadow-gray-700/50 border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center min-h-[400px]">
+            <h2 className="text-lg font-bold text-gray-400 dark:text-gray-300 uppercase tracking-widest mb-8">
               Emergency Trigger
             </h2>
             <PanicButton onEmergencyStart={handleEmergencyStart} />
-            <p className="text-gray-400 text-xs mt-8">
+            <p className="text-gray-400 dark:text-gray-300 text-xs mt-8">
               GPS Location will be shared with responders.
             </p>
 
             {/* Persistent CPR Button */}
             <button
               onClick={() => setCprActive(true)}
-              className="mt-6 w-full py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition-colors flex items-center justify-center gap-2"
+              className="mt-6 w-full py-3 bg-gray-900 dark:bg-red-600 text-white rounded-xl font-bold hover:bg-black dark:hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -119,14 +123,14 @@ const Dashboard = () => {
           </div>
 
           {/* Medical Summary Card */}
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-gray-800">Medical ID</h3>
+              <h3 className="font-bold text-gray-800 dark:text-white">Medical ID</h3>
               {isEditing ? (
                 <div className="flex gap-2">
                   <button
                     onClick={() => setIsEditing(false)}
-                    className="text-gray-400 text-xs font-bold uppercase hover:text-gray-600"
+                    className="text-gray-400 dark:text-gray-300 text-xs font-bold uppercase hover:text-gray-600 dark:hover:text-gray-100"
                   >
                     Cancel
                   </button>
@@ -151,7 +155,7 @@ const Dashboard = () => {
               isEditing ? (
                 <div className="space-y-3 text-sm">
                   <div>
-                    <label className="text-xs text-gray-400 font-bold block mb-1">
+                    <label className="text-xs text-gray-400 dark:text-gray-300 font-bold block mb-1">
                       Blood Type
                     </label>
                     <input
@@ -159,11 +163,11 @@ const Dashboard = () => {
                       onChange={(e) =>
                         setEditForm({ ...editForm, blood_type: e.target.value })
                       }
-                      className="w-full border p-2 rounded bg-gray-50 focus:ring-1 focus:ring-blue-500 outline-none"
+                      className="w-full border p-2 rounded bg-gray-50 dark:bg-gray-700 focus:ring-1 focus:ring-blue-500 outline-none dark:text-white"
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-gray-400 font-bold block mb-1">
+                    <label className="text-xs text-gray-400 dark:text-gray-300 font-bold block mb-1">
                       Allergies
                     </label>
                     <input
@@ -171,11 +175,11 @@ const Dashboard = () => {
                       onChange={(e) =>
                         setEditForm({ ...editForm, allergies: e.target.value })
                       }
-                      className="w-full border p-2 rounded bg-gray-50 focus:ring-1 focus:ring-blue-500 outline-none"
+                      className="w-full border p-2 rounded bg-gray-50 dark:bg-gray-700 focus:ring-1 focus:ring-blue-500 outline-none dark:text-white"
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-gray-400 font-bold block mb-1">
+                    <label className="text-xs text-gray-400 dark:text-gray-300 font-bold block mb-1">
                       Conditions
                     </label>
                     <input
@@ -183,34 +187,34 @@ const Dashboard = () => {
                       onChange={(e) =>
                         setEditForm({ ...editForm, conditions: e.target.value })
                       }
-                      className="w-full border p-2 rounded bg-gray-50 focus:ring-1 focus:ring-blue-500 outline-none"
+                      className="w-full border p-2 rounded bg-gray-50 dark:bg-gray-700 focus:ring-1 focus:ring-blue-500 outline-none dark:text-white"
                     />
                   </div>
                 </div>
               ) : (
                 <div className="space-y-3 text-sm">
-                  <div className="flex justify-between border-b border-gray-50 pb-2">
-                    <span className="text-gray-500">Blood Type</span>
-                    <span className="font-mono font-bold bg-gray-100 px-2 rounded">
+                  <div className="flex justify-between border-b border-gray-50 dark:border-gray-700 pb-2">
+                    <span className="text-gray-500 dark:text-gray-300">Blood Type</span>
+                    <span className="font-mono font-bold bg-gray-100 dark:bg-gray-700 px-2 rounded dark:text-white">
                       {history.blood_type || "N/A"}
                     </span>
                   </div>
                   <div>
-                    <span className="text-gray-500 block mb-1">Allergies</span>
-                    <span className="font-medium text-gray-800">
+                    <span className="text-gray-500 dark:text-gray-300 block mb-1">Allergies</span>
+                    <span className="font-medium text-gray-800 dark:text-white">
                       {history.allergies || "None recorded"}
                     </span>
                   </div>
                   <div>
-                    <span className="text-gray-500 block mb-1">Conditions</span>
-                    <span className="font-medium text-gray-800">
+                    <span className="text-gray-500 dark:text-gray-300 block mb-1">Conditions</span>
+                    <span className="font-medium text-gray-800 dark:text-white">
                       {history.conditions || "None recorded"}
                     </span>
                   </div>
                 </div>
               )
             ) : (
-              <div className="text-gray-400 text-sm italic">
+              <div className="text-gray-400 dark:text-gray-300 text-sm italic">
                 Loading info...
               </div>
             )}
