@@ -1,33 +1,47 @@
-"use client";
-
-import { useState, useEffect, useRef } from "react";
-import { X, Play, Pause } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Play, Pause, X } from "lucide-react";
 
 const CPRMetronome = ({ isActive, onClose }) => {
   const [count, setCount] = useState(0);
-  const [isRunning, setIsRunning] = useState(false);
-  const audioContextRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
 
+  // Initialize Audio on mount
+  useEffect(() => {
+    try {
+      const audio = new Audio("/metronome.mp3");
+      audio.preload = "auto";
+      audioRef.current = audio;
+    } catch (e) {
+      console.error("Failed to initialize audio", e);
+    }
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+    };
+  }, []);
+
+  // Handle Timer & Playback
   useEffect(() => {
     let interval;
-    if (isActive && isRunning) {
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext ||
-          window.webkitAudioContext)();
-      }
-      if (audioContextRef.current.state === "suspended") {
-        audioContextRef.current.resume();
-      }
-
+    if (isPlaying) {
       interval = setInterval(() => {
         setCount((c) => c + 1);
-        playBeep();
-      }, 550);
+        if (audioRef.current) {
+          audioRef.current.currentTime = 0;
+          audioRef.current
+            .play()
+            .catch((err) => console.warn("Audio play error:", err));
+        }
+      }, 550); // ~110 BPM
     } else {
       clearInterval(interval);
     }
     return () => clearInterval(interval);
-  }, [isActive, isRunning]);
+  }, [isPlaying]);
 
   const handleStart = () => {
     if (!audioContextRef.current) {
@@ -38,90 +52,100 @@ const CPRMetronome = ({ isActive, onClose }) => {
       setIsRunning(true);
     });
   };
+  const togglePlay = () => {
+    setIsPlaying(!isPlaying);
+  };
 
   const handleStop = () => {
     setIsRunning(false);
     setCount(0);
     onClose();
   };
-
-  const playBeep = () => {
-    if (!audioContextRef.current) return;
-    const oscillator = audioContextRef.current.createOscillator();
-    const gainNode = audioContextRef.current.createGain();
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContextRef.current.destination);
-    oscillator.type = "sine";
-    oscillator.frequency.value = 800;
-    gainNode.gain.value = 0.3;
-    oscillator.start();
-    oscillator.stop(audioContextRef.current.currentTime + 0.1);
+  const handleClose = () => {
+    setIsPlaying(false);
+    setCount(0);
+    onClose();
   };
 
-  if (!isActive) return null;
+  const handleStop = () => {
+    setIsPlaying(false);
+    setCount(0);
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+  };
 
+  // Component is only mounted when isActive is true, so we can just render
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center z-50 animate-fade-in p-4">
-      <div className="glass-primary p-8 rounded-2xl text-center max-w-sm w-full card-elevated animate-fade-in relative">
-        <button
-          onClick={handleStop}
-          className="absolute top-4 right-4 p-2 hover:bg-slate-700/50 rounded-lg transition-colors"
-        >
-          <X size={20} className="text-text-secondary" />
-        </button>
-
-        <h2 className="text-3xl font-bold text-accent mb-2 tracking-tight">
-          CPR ASSISTANT
+    <div className="w-full bg-white p-6 rounded-3xl shadow-xl border-2 border-red-500 animate-fade-in relative mb-6">
+      <div className="flex justify-between items-start mb-4">
+        <h2 className="text-2xl font-black text-red-600 tracking-tight">
+          CPR ASSIST
         </h2>
-        <p className="text-text-secondary text-sm mb-8">110 BPM Compressions</p>
-
-        {!isRunning ? (
-          <div className="py-12">
-            <button
-              onClick={handleStart}
-              className="w-48 h-48 rounded-full bg-gradient-to-br from-accent to-accent-dark hover:shadow-2xl hover:shadow-accent/50 text-white font-black text-lg shadow-lg transition-all duration-300 hover:scale-105 flex items-center justify-center flex-col gap-2 animate-glow-pulse"
-            >
-              <Play size={48} fill="currentColor" />
-              <span>START</span>
-            </button>
-            <p className="mt-6 text-text-secondary font-medium text-sm">
-              Be ready to provide CPR
-            </p>
-          </div>
-        ) : (
-          <>
-            <div
-              className={`w-56 h-56 bg-gradient-to-br from-accent to-accent-dark rounded-full flex flex-col items-center justify-center mx-auto mb-8 relative overflow-hidden transition-transform duration-100 shadow-lg ${
-                count % 2 === 0
-                  ? "scale-110 shadow-2xl shadow-accent/50"
-                  : "scale-100"
-              }`}
-            >
-              <span className="text-white text-5xl font-black tracking-widest">
-                PUSH
-              </span>
-              <span className="text-white text-sm font-semibold mt-2 opacity-80">
-                {count} compressions
-              </span>
-            </div>
-            <div className="space-y-6">
-              <button
-                onClick={() => setIsRunning(false)}
-                className="btn-secondary w-full flex items-center justify-center gap-2 py-3"
-              >
-                <Pause size={20} />
-                Pause
-              </button>
-              <button
-                onClick={handleStop}
-                className="btn-primary w-full py-3 uppercase tracking-wide font-bold"
-              >
-                Stop CPR Guide
-              </button>
-            </div>
-          </>
-        )}
+        <button
+          onClick={handleClose}
+          className="text-gray-400 hover:text-gray-600 bg-gray-100 p-1 rounded-full"
+        >
+          <X size={20} />
+        </button>
       </div>
+
+      {!isPlaying && count === 0 ? (
+        <div className="py-4 flex flex-col items-center">
+          <button
+            onClick={() => setIsPlaying(true)}
+            className="w-32 h-32 rounded-full bg-red-600 hover:bg-red-700 text-white font-black text-xl shadow-[0_0_30px_rgba(220,38,38,0.4)] transition-all hover:scale-105 flex items-center justify-center animate-pulse text-center leading-tight"
+          >
+            TAP TO
+            <br />
+            START
+          </button>
+          <p className="mt-4 text-gray-500 font-medium text-sm">Get Ready</p>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center">
+          {/* Visual CPR Indicator */}
+          <div
+            className={`w-32 h-32 bg-red-600 rounded-full flex flex-col items-center justify-center mb-6 relative overflow-hidden transition-transform duration-100 ${
+              count % 2 === 0 && isPlaying
+                ? "scale-110 shadow-[0_0_40px_rgba(220,38,38,0.6)]"
+                : "scale-100 shadow-none"
+            }`}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-white w-16 h-16 mb-1"
+            >
+              <path d="M12 21.5c-4 0-7-3-7-7v-2h14v2c0 4-3 7-7 7z" />
+              <path d="M12 21.5V12" />
+              <path d="M12 12c-2.5 0-4.5-2-4.5-4.5S9.5 3 12 3s4.5 2 4.5 4.5" />
+            </svg>
+            <span className="text-white text-2xl font-black tracking-widest">
+              {isPlaying ? (count % 2 === 0 ? "PUSH" : "PUSH") : "PAUSED"}
+            </span>
+          </div>
+
+          <div className="w-full">
+            <button
+              onClick={handleStop}
+              className="w-full py-4 rounded-xl font-bold text-lg uppercase tracking-wider bg-gray-900 hover:bg-black text-white transition-colors flex items-center justify-center gap-2"
+              title="Reset Metronome"
+            >
+              <X size={20} /> STOP GUIDANCE
+            </button>
+          </div>
+
+          <p className="mt-3 text-gray-500 font-medium text-xs">
+            100-120 Compressions/min
+          </p>
+        </div>
+      )}
     </div>
   );
 };

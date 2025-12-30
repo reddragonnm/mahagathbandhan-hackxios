@@ -1,11 +1,11 @@
-# Sanjeevni Emergency Response App
+# SanjeevniAI Emergency Response App
 
 A minimalist emergency response web application with a Panic Button and dual-mode medical chatbot.
 
 ## Project Structure
 
 - **frontend/**: React + Vite + Tailwind CSS application.
-- **backend/**: Flask application with SQLite and Azure OpenAI integration.
+- **backend/**: Flask application with SQLite and OpenAI (GitHub Models) integration.
 
 ## Setup Instructions
 
@@ -39,8 +39,7 @@ The backend runs on `http://localhost:5000`.
 _Note: The app is configured with a simulation mode by default. To use real Azure OpenAI models, create a `.env` file in the `backend/` folder with your keys:_
 
 ```env
-AZURE_OPENAI_ENDPOINT=https://your-endpoint.openai.azure.com/
-AZURE_OPENAI_API_KEY=your-api-key
+GITHUB_TOKEN=your-github-token
 ```
 
 ### 2. Frontend Setup
@@ -68,7 +67,7 @@ The frontend runs on `http://localhost:5173`.
 ## Features
 
 - **Panic Button:** One-click emergency trigger sharing simulated GPS location.
-- **Medical Chatbot:** Switches between "Emergency Guidance" (Llama3) and "General Health" (Dr. Samantha) modes.
+- **Medical Chatbot:** Switches between "Emergency Guidance" (Llama 3.1) and "General Health" (Dr. Samantha) modes.
 - **CPR Metronome:** Visual and auditory guide for CPR compressions (100-120 BPM).
 - **Medical History:** Secure storage of allergies and conditions.
 

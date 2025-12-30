@@ -10,9 +10,12 @@ const Signup = () => {
     username: "",
     password: "",
     confirmPassword: "",
+    blood_type: "",
+    allergies: "",
+    conditions: "",
+    medications: "",
   });
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -26,103 +29,151 @@ const Signup = () => {
       return;
     }
 
-    setLoading(true);
     try {
       await axios.post("/api/signup", {
         username: formData.username,
         password: formData.password,
+        blood_type: formData.blood_type,
+        allergies: formData.allergies,
+        conditions: formData.conditions,
+        medications: formData.medications,
       });
-      alert("Account created successfully! Please sign in.");
+      // Auto login or redirect to login
+      alert("Account created! Please login.");
       navigate("/login");
     } catch (err) {
       setError(err.response?.data?.error || "Registration failed");
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-md animate-fade-in">
-        <div className="glass-primary p-8 rounded-2xl card-elevated">
-          <div className="flex items-center justify-center mb-8">
-            <UserPlus className="text-accent mr-3" size={32} />
-            <h2 className="text-3xl font-bold text-text-primary">
-              Create Account
-            </h2>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md my-8">
+        <h2 className="text-3xl font-black mb-2 text-center">Create Account</h2>
+        <p className="text-center text-gray-500 mb-8">
+          Join SanjeevniAI Response
+        </p>
+        {error && (
+          <div className="bg-red-50 text-red-600 p-3 rounded mb-4 text-sm font-medium text-center">
+            {error}
           </div>
-          <p className="text-center text-text-secondary mb-8 text-sm">
-            Join the Sanjeevni emergency response network
-          </p>
+        )}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
+              Username
+            </label>
+            <input
+              type="text"
+              name="username"
+              value={formData.username}
+              onChange={handleChange}
+              className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-black outline-none bg-gray-50"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
+              Password
+            </label>
+            <input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-black outline-none bg-gray-50"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
+              Confirm Password
+            </label>
+            <input
+              type="password"
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-black outline-none bg-gray-50"
+              required
+            />
+          </div>
 
-          {error && (
-            <div className="bg-accent/10 border border-accent/30 text-accent p-4 rounded-lg mb-6 text-sm font-medium animate-fade-in">
-              {error}
+          <div className="pt-4 border-t border-gray-100">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
+              Medical Profile (Optional)
+            </p>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
+                    Blood Type
+                  </label>
+                  <input
+                    type="text"
+                    name="blood_type"
+                    value={formData.blood_type}
+                    onChange={handleChange}
+                    placeholder="e.g. O+"
+                    className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-black outline-none bg-gray-50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
+                    Allergies
+                  </label>
+                  <input
+                    type="text"
+                    name="allergies"
+                    value={formData.allergies}
+                    onChange={handleChange}
+                    placeholder="e.g. Peanuts"
+                    className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-black outline-none bg-gray-50"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
+                  Conditions
+                </label>
+                <input
+                  type="text"
+                  name="conditions"
+                  value={formData.conditions}
+                  onChange={handleChange}
+                  placeholder="e.g. Asthma, Diabetes"
+                  className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-black outline-none bg-gray-50"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
+                  Medications
+                </label>
+                <input
+                  type="text"
+                  name="medications"
+                  value={formData.medications}
+                  onChange={handleChange}
+                  placeholder="e.g. Insulin"
+                  className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-black outline-none bg-gray-50"
+                />
+              </div>
             </div>
-          )}
+          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">
-                Username
-              </label>
-              <input
-                type="text"
-                name="username"
-                value={formData.username}
-                onChange={handleChange}
-                className="input-base w-full"
-                placeholder="Choose a username"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">
-                Password
-              </label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className="input-base w-full"
-                placeholder="Create a strong password"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">
-                Confirm Password
-              </label>
-              <input
-                type="password"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                className="input-base w-full"
-                placeholder="Confirm your password"
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary w-full mt-6 uppercase tracking-wide font-bold disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? "Creating Account..." : "Create Account"}
-            </button>
-          </form>
-
-          <p className="mt-6 text-center text-sm text-text-secondary">
-            Already have an account?{" "}
-            <Link
-              to="/login"
-              className="link-accent font-semibold hover:underline"
-            >
-              Sign in
-            </Link>
-          </p>
-        </div>
+          <button
+            type="submit"
+            className="w-full bg-black text-white p-4 rounded-lg font-bold hover:bg-gray-800 transition-colors shadow-lg mt-6"
+          >
+            Sign Up
+          </button>
+        </form>
+        <p className="mt-6 text-center text-sm text-gray-600">
+          Already have an account?{" "}
+          <Link to="/login" className="text-blue-600 font-bold hover:underline">
+            Login
+          </Link>
+        </p>
       </div>
     </div>
   );

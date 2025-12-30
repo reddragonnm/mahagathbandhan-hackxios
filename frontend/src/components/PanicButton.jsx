@@ -49,10 +49,9 @@ const PanicButton = ({ onEmergencyStart }) => {
     return (
       <button
         onClick={handlePanicClick}
-        className="w-56 h-56 md:w-64 md:h-64 rounded-full bg-gradient-to-br from-accent to-accent-dark shadow-lg hover:shadow-2xl hover:shadow-accent/50 hover:scale-110 transition-all duration-300 flex flex-col items-center justify-center text-white z-10 animate-glow-pulse font-bold"
+        className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-red-600 shadow-[0_0_40px_rgba(239,68,68,0.5)] hover:bg-red-700 hover:shadow-[0_0_60px_rgba(239,68,68,0.7)] hover:scale-105 transition-all duration-300 flex flex-col items-center justify-center text-white z-10"
       >
-        <AlertCircle size={72} className="mb-4" strokeWidth={1.5} />
-        <span className="text-3xl md:text-4xl tracking-wider">PANIC</span>
+        <AlertCircle size={48} />
       </button>
     );
   }

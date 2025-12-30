@@ -18,8 +18,7 @@ const ChatWindow = ({ mode, setMode, onAction }) => {
         ...prev,
         {
           role: "assistant",
-          content:
-            "🚨 EMERGENCY PROTOCOL ACTIVATED\n\nI'm connecting you to emergency guidance. Is the patient conscious?",
+          content: "EMERGENCY PROTOCOL INITIATED. \nIs the patient conscious?",
           model: "System",
         },
       ]);
@@ -28,9 +27,8 @@ const ChatWindow = ({ mode, setMode, onAction }) => {
       setMessages([
         {
           role: "assistant",
-          content:
-            "Hello, I'm your medical assistant. How can I help you today? I can provide guidance on symptoms, first aid, and emergency protocols.",
-          model: "Medical Assistant",
+          content: "Hello! I'm Dr. Samantha. How can I help you today?",
+          model: "sethuiyer/Dr_Samantha-7b",
         },
       ]);
     }
@@ -75,6 +73,10 @@ const ChatWindow = ({ mode, setMode, onAction }) => {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let botMsgContent = "";
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let botMsgContent = "";
+      let metronomeTriggered = false;
 
       setMessages((prev) => [
         ...prev,
@@ -88,13 +90,37 @@ const ChatWindow = ({ mode, setMode, onAction }) => {
         const chunk = decoder.decode(value, { stream: true });
         botMsgContent += chunk;
 
+        // Trigger Metronome if the bot says so (client-side detection)
+        if (
+          !metronomeTriggered &&
+          botMsgContent.toLowerCase().includes("starting metronome")
+        ) {
+          onAction("start_metronome");
+          metronomeTriggered = true;
+        }
+
+        // Parse Options Pattern: [OPTIONS: Opt1 | Opt2]
         let displayContent = botMsgContent;
-        const optionsMatch = botMsgContent.match(/\[OPTIONS: (.*?)\]/);
+        // Match with [\s\S] to handle potential newlines from the model
+        // Relaxed regex: Case insensitive, optional space after colon, optional closing bracket (handles truncation)
+        const optionsMatch = botMsgContent.match(
+          /\[OPTIONS:?\s*([\s\S]*?)(?:\]|$)/i
+        );
 
         if (optionsMatch) {
           const optionsStr = optionsMatch[1];
-          const opts = optionsStr.split("|").map((o) => o.trim());
-          setCurrentOptions(opts);
+          // Clean up newlines and split
+          const opts = optionsStr
+            .replace(/\n/g, "")
+            .split("|")
+            .map((o) => o.trim())
+            .filter((o) => o.length > 0);
+
+          if (opts.length > 0) {
+            setCurrentOptions(opts);
+          }
+
+          // Hide the options tag from the message bubble
           displayContent = botMsgContent.replace(optionsMatch[0], "");
         }
 
@@ -128,91 +154,70 @@ const ChatWindow = ({ mode, setMode, onAction }) => {
 
   return (
     <div
-      className={`flex flex-col h-full border rounded-2xl overflow-hidden card-elevated transition-all duration-300 ${
+      className={`flex flex-col h-[600px] border rounded-xl overflow-hidden shadow-lg bg-white transition-colors duration-500 ${
         mode === "emergency"
-          ? "glass-primary border-accent/50 bg-gradient-to-b from-accent/5 to-transparent"
-          : "glass-primary border-border/50"
+          ? "border-red-500 border-2 shadow-red-100"
+          : "border-gray-200"
       }`}
     >
-      {/* Header */}
       <div
-        className={`px-6 py-4 flex justify-between items-center transition-all duration-300 ${
+        className={`p-4 ${
           mode === "emergency"
-            ? "bg-gradient-to-r from-accent/20 to-accent/10 border-b border-accent/20"
-            : "bg-slate-900/50 border-b border-border/30"
-        }`}
+            ? "bg-red-600 text-white"
+            : "bg-blue-600 text-white"
+        } flex justify-between items-center transition-colors duration-500`}
       >
-        <h3 className="font-bold flex items-center gap-3 text-text-primary">
-          {mode === "emergency" ? (
-            <>
-              <Activity
-                size={20}
-                className="text-accent animate-smooth-scale"
-              />
-              <span>Emergency Guidance</span>
-            </>
-          ) : (
-            <>
-              <Bot size={20} className="text-accent" />
-              <span>Medical Assistant</span>
-            </>
-          )}
+        <h3 className="font-bold flex items-center gap-2">
+          {mode === "emergency" ? <Activity size={20} /> : <Bot size={20} />}
+          {mode === "emergency" ? "EMERGENCY GUIDANCE" : "Medical Assistant"}
         </h3>
         {mode === "emergency" && (
           <button
-            onClick={() => setMode("general")}
-            className="text-xs bg-accent/20 hover:bg-accent/30 text-accent px-3 py-1 rounded-lg transition-colors flex items-center gap-1"
+            onClick={() => {
+              setMode("general");
+              setMessages([
+                {
+                  role: "assistant",
+                  content: "Hello! I'm Dr. Samantha. How can I help you today?",
+                  model: "sethuiyer/Dr_Samantha-7b",
+                },
+              ]);
+              setCurrentOptions([]);
+            }}
+            className="text-xs bg-white/20 px-2 py-1 rounded hover:bg-white/30"
           >
-            <X size={14} />
-            End
+            End Emergency
           </button>
         )}
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
         {messages.map((msg, idx) => (
           <div
             key={idx}
             className={`flex ${
               msg.role === "user" ? "justify-end" : "justify-start"
-            } animate-fade-in`}
+            }`}
           >
             <div
-              className={`max-w-[85%] p-4 rounded-2xl transition-all duration-200 ${
+              className={`max-w-[85%] p-3 rounded-2xl shadow-sm ${
                 msg.role === "user"
-                  ? "bg-gradient-to-br from-accent to-accent-dark text-white rounded-br-none shadow-lg"
+                  ? "bg-blue-600 text-white rounded-br-none"
                   : mode === "emergency" && msg.role === "assistant"
-                  ? "bg-accent/10 text-text-primary rounded-bl-none border border-accent/20"
-                  : "bg-slate-900/50 text-text-primary rounded-bl-none border border-border/30"
+                  ? "bg-red-100 text-gray-900 rounded-bl-none border border-red-200 font-medium"
+                  : "bg-white text-gray-800 rounded-bl-none border border-gray-100"
               }`}
             >
-              <div className="text-sm md:text-base leading-relaxed">
+              <div className="text-sm md:text-base leading-relaxed markdown-body">
                 <ReactMarkdown>{msg.content}</ReactMarkdown>
               </div>
-              {msg.model && (
-                <p className="text-[10px] mt-2 opacity-50 text-right uppercase tracking-wider">
-                  {msg.model}
-                </p>
-              )}
             </div>
           </div>
         ))}
         {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
-          <div className="flex justify-start animate-fade-in">
-            <div className="bg-slate-900/50 border border-border/30 p-4 rounded-2xl rounded-bl-none text-text-secondary text-sm flex items-center gap-2">
-              <div
-                className="w-2 h-2 bg-text-secondary rounded-full animate-bounce"
-                style={{ animationDelay: "0s" }}
-              ></div>
-              <div
-                className="w-2 h-2 bg-text-secondary rounded-full animate-bounce"
-                style={{ animationDelay: "0.2s" }}
-              ></div>
-              <div
-                className="w-2 h-2 bg-text-secondary rounded-full animate-bounce"
-                style={{ animationDelay: "0.4s" }}
-              ></div>
+          <div className="flex justify-start">
+            <div className="bg-white p-3 rounded-2xl rounded-bl-none border border-gray-100 text-gray-400 text-sm">
+              Thinking...
             </div>
           </div>
         )}
