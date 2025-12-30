@@ -1,4 +1,4 @@
-# SanjeevniAI: Smart Emergency Response Assistant 🚑
+# SanjeevniAI: Smart Emergency Response Assistant 
 
 > **Team Mahagathbandhan (IIT Delhi)**
 > *Brahmasees Singh Makkar | Neelesh Mishra | Shreyans Jain*
@@ -7,11 +7,11 @@
 
 **SanjeevniAI** is a comprehensive, minimalist emergency response web application designed to act as a **digital first-responder**. It bridges the gap between the onset of a medical emergency and the arrival of professional help by guiding untrained bystanders through critical life-saving actions.
 
-🚀 **Live Demo:** [https://mahagathbandhan-hackxios.vercel.app/](https://mahagathbandhan-hackxios.vercel.app/)
+**Live Demo:** [https://mahagathbandhan-hackxios.vercel.app/](https://mahagathbandhan-hackxios.vercel.app/)
 
 ---
 
-## ❓ Problem Statement: The Golden Hour
+## Problem Statement: The Golden Hour
 
 In critical health emergencies, immediate guidance is often unavailable. A large percentage of emergencies occur where trained personnel are not present, and valuable minutes are lost before professional help arrives.
 
@@ -23,43 +23,43 @@ In critical health emergencies, immediate guidance is often unavailable. A large
 
 ---
 
-## 💡 Solution Overview
+## Solution Overview
 
 SanjeevniAI is designed to be fast, intuitive, and reliable. Rather than replacing doctors, it focuses on reducing cognitive load during high-stress situations.
 
 ### Key Capabilities
 
-#### 1. 🚨 Panic-First Interface
+#### 1. Panic-First Interface
 Most emergency apps force users to navigate menus—wasting precious seconds. SanjeevniAI presents a **large, single emergency button** that instantly:
 *   Activates **Emergency Mode**.
 *   Increases screen contrast for visibility.
 *   Starts logging vital context (Time, GPS, Type of Incident).
 *   Prepares guidance workflows.
 
-#### 2. 🤖 Dual-Mode AI Guidance
+#### 2. Dual-Mode AI Guidance
 The system intelligently switches between two interaction styles:
 *   **Emergency Mode (Llama 3.1):** Short, assertive, protocol-driven instructions. It asks "Yes/No" triage questions and avoids long paragraphs to ensure immediate action (e.g., "Check breathing," "Start compressions").
 *   **General Mode (Dr. Samantha):** A friendly, conversational health assistant for non-urgent advice, FAQs, and wellness queries.
 
-#### 3. 🗣️ Hands-Free Voice Interaction
+#### 3. Hands-Free Voice Interaction
 During CPR or bleeding control, users cannot type. SanjeevniAI supports:
 *   **Speech-to-Text:** For hands-free reporting.
 *   **Text-to-Speech:** Instructions are spoken aloud so the user can focus on the patient.
 *   **Auto-Send on Silence:** Detects when the user stops speaking to send the message automatically, keeping hands free for lifesaving actions.
 
-#### 4. 💓 Integrated CPR Metronome
+#### 4. Integrated CPR Metronome
 CPR quality directly affects survival. The app includes a dedicated tool providing:
 *   Audio/Visual guidance at **100–120 BPM** (standard CPR rate).
 *   Visual pulse indicators.
 *   Automatic activation when the AI detects a cardiac arrest scenario.
 
-#### 5. 📍 Live Context & Secure Profile
+#### 5. Live Context & Secure Profile
 *   **Emergency Sharing:** Securely captures latitude/longitude, incident time, and ongoing instructions to share with responders.
 *   **Medical Profile:** encrypted storage for allergies, chronic conditions, blood type, and medications. The AI uses this to prevent contraindicated advice (e.g., avoiding specific drugs).
 
 ---
 
-## 🏗️ Architecture & Workflow
+## Architecture & Workflow
 
 ### User Flow
 1.  **Login:** User logs in and loads their secure medical profile.
@@ -81,7 +81,7 @@ CPR quality directly affects survival. The app includes a dedicated tool providi
 
 ---
 
-## 🚀 Installation & Setup
+## Installation & Setup
 
 Follow these instructions to run the project locally.
 
@@ -116,7 +116,7 @@ npm run dev
 
 ---
 
-## 🧠 Challenges & Learnings
+## Challenges & Learnings
 
 *   **CORS & Proxying:** Solved communication issues between the React frontend and Flask backend using proper proxy routing and header configurations.
 *   **Database Security:** Addressed password hash truncation issues by expanding database column limits and implementing secure hashing.
@@ -125,11 +125,11 @@ npm run dev
 
 ---
 
-## 🗺️ Future Roadmap
+## Future Roadmap
 
-*   🚑 **Live Ambulance Tracking:** Integration with emergency dispatch APIs.
-*   📶 **Offline AI Support:** Implementing lightweight, on-device models for low-bandwidth areas.
-*   📹 **Video Assistance:** Computer vision for wound detection and real-time CPR posture correction.
+*   **Live Ambulance Tracking:** Integration with emergency dispatch APIs.
+*   **Offline AI Support:** Implementing lightweight, on-device models for low-bandwidth areas.
+*   **Video Assistance:** Computer vision for wound detection and real-time CPR posture correction.
 
 ---
 
