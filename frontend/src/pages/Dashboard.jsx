@@ -1,17 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import PanicButton from "../components/PanicButton";
 import ChatWindow from "../components/ChatWindow";
 import CPRMetronome from "../components/CPRMetronome";
 import axios from "axios";
 import { LogOut, Heart, AlertCircle } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
+import AuthModal from "../components/AuthModal";
 
 const Dashboard = () => {
   const [mode, setMode] = useState("general");
   const [cprActive, setCprActive] = useState(false);
   const [history, setHistory] = useState(null);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
     blood_type: "",
@@ -19,20 +21,74 @@ const Dashboard = () => {
     conditions: "",
     medications: "",
   });
-  const userId = localStorage.getItem("user_id");
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(localStorage.getItem("user_id"));
+
+  const fetchHistory = useCallback(async () => {
+    const userId = localStorage.getItem("user_id");
+    setCurrentUserId(userId); // Keep currentUserId in sync
+
+    if (userId) {
+      setIsHistoryLoading(true);
+      try {
+        const res = await axios.get(`/api/medical-history?user_id=${userId}`);
+        const data = res.data || {
+          blood_type: "",
+          allergies: "",
+          conditions: "",
+          medications: "",
+        };
+        setHistory(data);
+        setEditForm(data);
+      } catch (err) {
+        console.error("Failed to fetch medical history", err);
+        setHistory({
+          blood_type: "",
+          allergies: "",
+          conditions: "",
+          medications: "",
+        });
+        setEditForm({
+          blood_type: "",
+          allergies: "",
+          conditions: "",
+          medications: "",
+        });
+      } finally {
+        setIsHistoryLoading(false);
+      }
+    } else {
+      // If no userId, stop loading and set empty history
+      setHistory({
+        blood_type: "",
+        allergies: "",
+        conditions: "",
+        medications: "",
+      });
+      setEditForm({
+        blood_type: "",
+        allergies: "",
+        conditions: "",
+        medications: "",
+      });
+      setIsHistoryLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    // Fetch basic history for display
-    if (userId) {
-      axios
-        .get(`/api/medical-history?user_id=${userId}`)
-        .then((res) => {
-          setHistory(res.data);
-          setEditForm(res.data);
-        })
-        .catch((err) => console.error(err));
-    }
-  }, [userId]);
+    fetchHistory();
+  }, [fetchHistory]);
+
+  const handleLoginSuccess = () => {
+    setShowAuthModal(false);
+    fetchHistory(); // Re-fetch history after successful login
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("user_id");
+    setCurrentUserId(null); // Update state to reflect logout
+    fetchHistory(); // Clear history display
+  };
 
   const handleEmergencyStart = (location) => {
     setMode("emergency");
@@ -45,9 +101,14 @@ const Dashboard = () => {
   };
 
   const handleSaveHistory = async () => {
+    if (!currentUserId) {
+      alert("Please log in to save medical history.");
+      setShowAuthModal(true);
+      return;
+    }
     try {
       await axios.post("/api/medical-history", {
-        user_id: userId,
+        user_id: currentUserId,
         ...editForm,
       });
       setHistory(editForm);
@@ -66,16 +127,21 @@ const Dashboard = () => {
         </h1>
         <div className="flex items-center gap-4">
           <ThemeToggle />
-          <button
-            onClick={() => {
-              localStorage.removeItem("user_id");
-              window.dispatchEvent(new Event("storage"));
-              window.location.href = "/login";
-            }}
-            className="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-red-600 transition-colors"
-          >
-            Log Out
-          </button>
+          {currentUserId ? (
+            <button
+              onClick={handleLogout}
+              className="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-red-600 transition-colors"
+            >
+              Log Out
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowAuthModal(true)}
+              className="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
+            >
+              Login / Sign Up
+            </button>
+          )}
         </div>
       </header>
 
@@ -151,7 +217,11 @@ const Dashboard = () => {
               )}
             </div>
 
-            {history ? (
+            {isHistoryLoading ? (
+              <div className="text-gray-400 dark:text-gray-300 text-sm italic">
+                Loading info...
+              </div>
+            ) : history ? (
               isEditing ? (
                 <div className="space-y-3 text-sm">
                   <div>
@@ -215,7 +285,7 @@ const Dashboard = () => {
               )
             ) : (
               <div className="text-gray-400 dark:text-gray-300 text-sm italic">
-                Loading info...
+                No medical history found.
               </div>
             )}
           </div>
@@ -223,9 +293,20 @@ const Dashboard = () => {
 
         {/* Right Column: Chat Interface */}
         <div className="lg:col-span-7 h-full min-h-[500px]">
-          <ChatWindow mode={mode} setMode={setMode} onAction={handleAction} />
+          <ChatWindow
+            mode={mode}
+            setMode={setMode}
+            onAction={handleAction}
+            currentUserId={currentUserId}
+            onShowAuthModal={() => setShowAuthModal(true)}
+          />
         </div>
       </main>
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onLoginSuccess={handleLoginSuccess}
+      />
     </div>
   );
 };

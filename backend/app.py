@@ -14,7 +14,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
-CORS(app, expose_headers=["X-Suggested-Action", "X-Model"])
+CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5173", "http://localhost:3000"]}}, expose_headers=["X-Suggested-Action", "X-Model"])
 
 # GitHub Models Inference API Setup
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")

@@ -1,8 +1,6 @@
 "use client";
 
-import { Routes, Route, Navigate } from "react-router-dom";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
+import { Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import { useState, useEffect } from "react";
 
@@ -20,16 +18,7 @@ function App() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-text-primary">
       <Routes>
-        <Route path="/login" element={<Login setUser={setUser} />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route
-          path="/dashboard"
-          element={user ? <Dashboard /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/"
-          element={<Navigate to={user ? "/dashboard" : "/login"} />}
-        />
+        <Route path="/" element={<Dashboard />} />
       </Routes>
     </div>
   );

@@ -4,13 +4,12 @@ import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import { Send, Bot, Activity, X } from "lucide-react";
 
-const ChatWindow = ({ mode, setMode, onAction }) => {
+const ChatWindow = ({ mode, setMode, onAction, currentUserId, onShowAuthModal }) => { // Added currentUserId, onShowAuthModal
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [currentOptions, setCurrentOptions] = useState([]);
   const bottomRef = useRef(null);
-  const userId = localStorage.getItem("user_id");
 
   useEffect(() => {
     if (mode === "emergency") {
@@ -39,6 +38,10 @@ const ChatWindow = ({ mode, setMode, onAction }) => {
   }, [messages, isLoading, currentOptions]);
 
   const sendMessage = async (text) => {
+    if (!currentUserId) { // Check if user is logged in
+      onShowAuthModal(); // Show auth modal if not logged in
+      return;
+    }
     if (!text.trim()) return;
 
     const userMsg = { role: "user", content: text };
@@ -56,7 +59,7 @@ const ChatWindow = ({ mode, setMode, onAction }) => {
         body: JSON.stringify({
           message: text,
           mode: mode,
-          user_id: userId,
+          user_id: currentUserId, // Use currentUserId prop
           history: messages.map((m) => ({ role: m.role, content: m.content })),
         }),
       });
@@ -238,29 +241,40 @@ const ChatWindow = ({ mode, setMode, onAction }) => {
 
       {/* Input */}
       <div className="px-6 py-4 border-t border-border/30 dark:border-gray-700 bg-slate-900/50 dark:bg-gray-800/70 flex gap-3">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) =>
-            e.key === "Enter" &&
-            !e.shiftKey &&
-            (e.preventDefault(), sendMessage(input))
-          }
-          placeholder={
-            mode === "emergency"
-              ? "Respond here..."
-              : "Type your health question..."
-          }
-          className="input-base flex-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:ring-blue-500"
-        />
-        <button
-          onClick={() => sendMessage(input)}
-          disabled={isLoading}
-          className="btn-primary p-3 disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-lg"
-        >
-          <Send size={20} strokeWidth={1.5} />
-        </button>
+        {currentUserId ? ( // Conditional rendering based on login status
+          <>
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) =>
+                e.key === "Enter" &&
+                !e.shiftKey &&
+                (e.preventDefault(), sendMessage(input))
+              }
+              placeholder={
+                mode === "emergency"
+                  ? "Respond here..."
+                  : "Type your health question..."
+              }
+              className="input-base flex-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:ring-blue-500"
+            />
+            <button
+              onClick={() => sendMessage(input)}
+              disabled={isLoading}
+              className="btn-primary p-3 disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-lg"
+            >
+              <Send size={20} strokeWidth={1.5} />
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={onShowAuthModal}
+            className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold"
+          >
+            Login or Sign Up to Chat
+          </button>
+        )}
       </div>
     </div>
   );
