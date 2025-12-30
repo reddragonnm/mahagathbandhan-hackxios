@@ -61,10 +61,10 @@ const PanicButton = ({ onEmergencyStart }) => {
       <div className="glass-primary p-8 rounded-2xl max-w-sm w-full card-elevated animate-fade-in">
         {step === "phone" && (
           <form onSubmit={handlePhoneSubmit} className="space-y-6">
-            <h3 className="text-2xl font-bold text-text-primary">
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
               Emergency Alert
             </h3>
-            <p className="text-sm text-text-secondary">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
               Enter mobile number for emergency updates (optional)
             </p>
             <input
@@ -99,10 +99,10 @@ const PanicButton = ({ onEmergencyStart }) => {
                 strokeWidth={1.5}
               />
             </div>
-            <p className="font-bold text-lg text-text-primary">
+            <p className="font-bold text-lg text-gray-900 dark:text-white">
               Acquiring Location...
             </p>
-            <p className="text-text-secondary text-sm mt-2">
+            <p className="text-gray-600 dark:text-gray-300 text-sm mt-2">
               Sending emergency alert
             </p>
           </div>
@@ -112,22 +112,22 @@ const PanicButton = ({ onEmergencyStart }) => {
           <div className="text-center py-8">
             <div className="flex justify-center mb-4">
               <CheckCircle
-                className="text-success"
+                className="text-green-600 dark:text-green-400"
                 size={56}
                 strokeWidth={1.5}
               />
             </div>
-            <p className="font-bold text-lg text-success mb-4">
+            <p className="font-bold text-lg text-green-600 dark:text-green-400 mb-4">
               Help Requested
             </p>
-            <p className="text-text-secondary text-sm mb-6">
+            <p className="text-gray-600 dark:text-gray-300 text-sm mb-6">
               Emergency alert sent to responders
               <br />
-              <span className="font-mono text-text-primary text-xs mt-3 block bg-slate-900/50 p-3 rounded-lg">
+              <span className="font-mono text-gray-900 dark:text-white text-xs mt-3 block bg-slate-900/50 p-3 rounded-lg">
                 {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
               </span>
             </p>
-            <p className="text-text-secondary text-xs animate-pulse">
+            <p className="text-gray-600 dark:text-gray-300 text-xs animate-pulse">
               Connecting to emergency guidance...
             </p>
           </div>

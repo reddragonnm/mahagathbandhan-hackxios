@@ -39,7 +39,7 @@ else:
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    password_hash = db.Column(db.String(120), nullable=False)
+    password_hash = db.Column(db.String(256), nullable=False)
     medical_history = db.relationship('MedicalHistory', backref='user', uselist=False)
 
 class MedicalHistory(db.Model):
@@ -62,47 +62,65 @@ def select_model(message, mode):
 
 @app.route('/api/signup', methods=['POST'])
 def signup():
+    print("DEBUG: Signup request received")
     data = request.json
+    print(f"DEBUG: Signup data: {data}")
     username = data.get('username')
     password = data.get('password')
     
     if not username or not password:
+        print("DEBUG: Signup failed - missing fields")
         return jsonify({"error": "Username and password required"}), 400
         
     if User.query.filter_by(username=username).first():
+        print("DEBUG: Signup failed - user exists")
         return jsonify({"error": "User already exists"}), 400
         
     hashed_pw = generate_password_hash(password)
     new_user = User(username=username, password_hash=hashed_pw)
-    db.session.add(new_user)
-    db.session.flush() # Flush to get the new_user.id
     
-    # Add initial medical history
-    new_history = MedicalHistory(
-        user_id=new_user.id,
-        allergies=data.get('allergies', ''),
-        conditions=data.get('conditions', ''),
-        blood_type=data.get('blood_type', ''),
-        medications=data.get('medications', '')
-    )
-    db.session.add(new_history)
-    db.session.commit()
-    
-    return jsonify({"message": "User created successfully"}), 201
+    try:
+        db.session.add(new_user)
+        db.session.flush() # Flush to get the new_user.id
+        
+        # Add initial medical history
+        new_history = MedicalHistory(
+            user_id=new_user.id,
+            allergies=data.get('allergies', ''),
+            conditions=data.get('conditions', ''),
+            blood_type=data.get('blood_type', ''),
+            medications=data.get('medications', '')
+        )
+        db.session.add(new_history)
+        db.session.commit()
+        print("DEBUG: Signup successful")
+        return jsonify({"message": "User created successfully"}), 201
+    except Exception as e:
+        db.session.rollback()
+        print(f"DEBUG: Signup DB Error: {e}")
+        return jsonify({"error": "Database error during signup"}), 500
 
 @app.route('/api/login', methods=['POST'])
 def login():
-    data = request.json
-    username = data.get('username')
-    password = data.get('password')
-    
-    user = User.query.filter_by(username=username).first()
-    if user and check_password_hash(user.password_hash, password):
-        # In a real app, we'd use JWTs or proper session management.
-        # For this prototype, we'll return the user_id to be stored in localStorage.
-        return jsonify({"message": "Login successful", "user_id": user.id}), 200
-    
-    return jsonify({"error": "Invalid credentials"}), 401
+    print("DEBUG: Login request received")
+    try:
+        data = request.json
+        print(f"DEBUG: Login data: {data}")
+        username = data.get('username')
+        password = data.get('password')
+        
+        user = User.query.filter_by(username=username).first()
+        if user and check_password_hash(user.password_hash, password):
+            # In a real app, we'd use JWTs or proper session management.
+            # For this prototype, we'll return the user_id to be stored in localStorage.
+            print("DEBUG: Login successful")
+            return jsonify({"message": "Login successful", "user_id": user.id}), 200
+        
+        print("DEBUG: Login failed - invalid credentials")
+        return jsonify({"error": "Invalid credentials"}), 401
+    except Exception as e:
+        print(f"DEBUG: Login Error: {e}")
+        return jsonify({"error": "Server error during login"}), 500
 
 @app.route('/api/medical-history', methods=['GET', 'POST'])
 def handle_medical_history():
@@ -256,4 +274,4 @@ def chat():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5001)

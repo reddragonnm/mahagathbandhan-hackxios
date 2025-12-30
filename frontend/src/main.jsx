@@ -5,7 +5,7 @@ import './index.css'
 import { BrowserRouter } from 'react-router-dom'
 import axios from 'axios';
 
-axios.defaults.baseURL = 'http://localhost:5000'; // Set your backend API base URL here
+// axios.defaults.baseURL = 'http://localhost:5000'; // Removed to use Vite proxy
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
