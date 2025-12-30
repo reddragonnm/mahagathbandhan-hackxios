@@ -216,8 +216,11 @@ def chat():
         )
 
     try:
+        # Inject strong reminder into the prompt for emergency mode
         if mode == 'emergency':
-             system_prompt += " REMINDER: Keep response short. YOU MUST END WITH [OPTIONS: Option A | Option B]. Do not add newlines inside the brackets."
+             # We append this to the system prompt (already done above) AND potentially the last user message for robustness
+             # But here we modify the 'message' variable which is the user's current input
+             message = f"{message}\n\n[SYSTEM INSTRUCTION: You MUST end your response with [OPTIONS: Choice A | Choice B]. Keep response under 50 words.]"
 
         formatted_prompt = format_llama3_prompt(system_prompt, history_context, message)
 
@@ -225,7 +228,7 @@ def chat():
             "model": HF_MODEL,
             "prompt": formatted_prompt,
             "max_tokens": 500,
-            "temperature": 0.3,
+            "temperature": 0.1, # Lower temperature for stricter adherence
             "stop": ["<|eot_id|>"],
             "stream": False 
         }
