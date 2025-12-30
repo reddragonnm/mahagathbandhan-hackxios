@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState } from "react";
+import axios from "axios";
 
 const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [medicalInfo, setMedicalInfo] = useState({
-    allergies: '',
-    conditions: '',
-    blood_type: '',
-    medications: '',
+    allergies: "",
+    conditions: "",
+    blood_type: "",
+    medications: "",
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
@@ -24,28 +24,34 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
 
     try {
       if (isLogin) {
-        const response = await axios.post('/api/login', { username, password });
-        localStorage.setItem('user_id', response.data.user_id);
+        const response = await axios.post(
+          "https://reddragonnm.pythonanywhere.com/api/login",
+          { username, password }
+        );
+        localStorage.setItem("user_id", response.data.user_id);
         onLoginSuccess();
       } else {
         if (password !== confirmPassword) {
-          setError('Passwords do not match');
+          setError("Passwords do not match");
           setLoading(false);
           return;
         }
-        await axios.post('/api/signup', {
+        await axios.post("https://reddragonnm.pythonanywhere.com/api/signup", {
           username,
           password,
           ...medicalInfo, // Include medical info in signup
         });
         // After signup, automatically try to log in the user
-        const response = await axios.post('/api/login', { username, password });
-        localStorage.setItem('user_id', response.data.user_id);
+        const response = await axios.post(
+          "https://reddragonnm.pythonanywhere.com/api/login",
+          { username, password }
+        );
+        localStorage.setItem("user_id", response.data.user_id);
         onLoginSuccess();
       }
       onClose();
@@ -55,16 +61,19 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
         console.error("Response Status:", err.response.status);
         console.error("Response Data:", err.response.data);
       }
-      
-      let errorMessage = 'An error occurred';
+
+      let errorMessage = "An error occurred";
       if (err.response?.data?.error) {
         errorMessage = err.response.data.error;
-      } else if (typeof err.response?.data === 'string' && err.response.data.includes('Proxy error')) {
+      } else if (
+        typeof err.response?.data === "string" &&
+        err.response.data.includes("Proxy error")
+      ) {
         errorMessage = "Backend connection failed. Please try again.";
       } else if (err.message) {
-         errorMessage = err.message;
+        errorMessage = err.message;
       }
-      
+
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -73,14 +82,19 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl w-96 max-h-[90vh] overflow-y-auto"> {/* Added max-h and overflow */}
+      <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl w-96 max-h-[90vh] overflow-y-auto">
+        {" "}
+        {/* Added max-h and overflow */}
         <h2 className="text-2xl font-bold mb-6 text-center text-gray-900 dark:text-white">
-          {isLogin ? 'Login' : 'Sign Up'}
+          {isLogin ? "Login" : "Sign Up"}
         </h2>
         {error && <p className="text-red-500 text-center mb-4">{error}</p>}
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2" htmlFor="username">
+            <label
+              className="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2"
+              htmlFor="username"
+            >
               Username
             </label>
             <input
@@ -94,7 +108,10 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
             />
           </div>
           <div className="mb-4">
-            <label className="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2" htmlFor="password">
+            <label
+              className="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2"
+              htmlFor="password"
+            >
               Password
             </label>
             <input
@@ -110,7 +127,10 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
           {!isLogin && (
             <>
               <div className="mb-6">
-                <label className="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2" htmlFor="confirmPassword">
+                <label
+                  className="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2"
+                  htmlFor="confirmPassword"
+                >
                   Confirm Password
                 </label>
                 <input
@@ -123,9 +143,14 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
                   required={!isLogin}
                 />
               </div>
-              <p className="text-gray-700 dark:text-gray-300 text-lg font-bold mb-4">Medical Information (Optional)</p>
+              <p className="text-gray-700 dark:text-gray-300 text-lg font-bold mb-4">
+                Medical Information (Optional)
+              </p>
               <div className="mb-4">
-                <label className="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2" htmlFor="allergies">
+                <label
+                  className="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2"
+                  htmlFor="allergies"
+                >
                   Allergies
                 </label>
                 <input
@@ -138,7 +163,10 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
                 />
               </div>
               <div className="mb-4">
-                <label className="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2" htmlFor="conditions">
+                <label
+                  className="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2"
+                  htmlFor="conditions"
+                >
                   Conditions
                 </label>
                 <input
@@ -151,7 +179,10 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
                 />
               </div>
               <div className="mb-4">
-                <label className="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2" htmlFor="blood_type">
+                <label
+                  className="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2"
+                  htmlFor="blood_type"
+                >
                   Blood Type
                 </label>
                 <input
@@ -164,7 +195,10 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
                 />
               </div>
               <div className="mb-6">
-                <label className="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2" htmlFor="medications">
+                <label
+                  className="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2"
+                  htmlFor="medications"
+                >
                   Medications
                 </label>
                 <input
@@ -184,17 +218,19 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
               className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
               disabled={loading}
             >
-              {loading ? 'Loading...' : isLogin ? 'Login' : 'Sign Up'}
+              {loading ? "Loading..." : isLogin ? "Login" : "Sign Up"}
             </button>
             <button
               type="button"
               onClick={() => {
                 setIsLogin(!isLogin);
-                setError(''); // Clear error when switching forms
+                setError(""); // Clear error when switching forms
               }}
               className="inline-block align-baseline font-bold text-sm text-blue-600 hover:text-blue-800"
             >
-              {isLogin ? 'Need an account? Sign Up' : 'Already have an account? Login'}
+              {isLogin
+                ? "Need an account? Sign Up"
+                : "Already have an account? Login"}
             </button>
           </div>
         </form>

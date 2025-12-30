@@ -4,14 +4,20 @@ import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import { Send, Bot, Activity, Mic, Volume2, VolumeX } from "lucide-react";
 
-const ChatWindow = ({ mode, setMode, onAction, currentUserId, onShowAuthModal }) => {
+const ChatWindow = ({
+  mode,
+  setMode,
+  onAction,
+  currentUserId,
+  onShowAuthModal,
+}) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [currentOptions, setCurrentOptions] = useState([]);
   const [isListening, setIsListening] = useState(false);
   const [voiceMode, setVoiceMode] = useState(false);
-  
+
   const chatContainerRef = useRef(null);
   const recognitionRef = useRef(null);
   const messagesRef = useRef(messages);
@@ -21,8 +27,8 @@ const ChatWindow = ({ mode, setMode, onAction, currentUserId, onShowAuthModal })
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
-  
-  const userId = currentUserId || localStorage.getItem('user_id');
+
+  const userId = currentUserId || localStorage.getItem("user_id");
 
   const sendMessage = async (text) => {
     if (!text.trim()) return;
@@ -36,22 +42,31 @@ const ChatWindow = ({ mode, setMode, onAction, currentUserId, onShowAuthModal })
     setCurrentOptions([]);
 
     try {
-      const currentHistory = messagesRef.current.map((m) => ({ role: m.role, content: m.content }));
-      
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: text,
-          mode: mode,
-          user_id: userId,
-          history: currentHistory, 
-        }),
-      });
+      const currentHistory = messagesRef.current.map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
 
-      if (!response.ok) {console.log(response);throw new Error("Network response was not ok")};
+      const response = await fetch(
+        "https://reddragonnm.pythonanywhere.com/api/chat",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            message: text,
+            mode: mode,
+            user_id: userId,
+            history: currentHistory,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        console.log(response);
+        throw new Error("Network response was not ok");
+      }
 
       const suggestedAction = response.headers.get("X-Suggested-Action");
       const modelName = response.headers.get("X-Model");
@@ -87,21 +102,28 @@ const ChatWindow = ({ mode, setMode, onAction, currentUserId, onShowAuthModal })
 
         let displayContent = botMsgContent;
         // Robust Regex: Matches [OPTIONS: ...] with optional space/colon, allowing any content inside, until closing bracket.
-        const optionsMatch = botMsgContent.match(/\[\s*OPTIONS\s*:?[\s\S]*?\]/i);
-        
+        const optionsMatch = botMsgContent.match(
+          /\[\s*OPTIONS\s*:?[\s\S]*?\]/i
+        );
+
         if (optionsMatch) {
-            // Extract content inside brackets: [OPTIONS: content ]
-            // Remove the [OPTIONS: and the ]
-            const innerContent = optionsMatch[0].replace(/^\s*\[\s*OPTIONS\s*:?/i, '').replace(/\s*\]$/, '');
-            
-            const opts = innerContent.split('|').map(o => o.trim()).filter(o => o.length > 0);
-            
-            if (opts.length > 0) {
-                 setCurrentOptions(opts);
-            }
-            
-            // Remove the tag from the display text
-            displayContent = botMsgContent.replace(optionsMatch[0], '');
+          // Extract content inside brackets: [OPTIONS: content ]
+          // Remove the [OPTIONS: and the ]
+          const innerContent = optionsMatch[0]
+            .replace(/^\s*\[\s*OPTIONS\s*:?/i, "")
+            .replace(/\s*\]$/, "");
+
+          const opts = innerContent
+            .split("|")
+            .map((o) => o.trim())
+            .filter((o) => o.length > 0);
+
+          if (opts.length > 0) {
+            setCurrentOptions(opts);
+          }
+
+          // Remove the tag from the display text
+          displayContent = botMsgContent.replace(optionsMatch[0], "");
         }
 
         setMessages((prev) => {
@@ -113,16 +135,15 @@ const ChatWindow = ({ mode, setMode, onAction, currentUserId, onShowAuthModal })
           return newMessages;
         });
       }
-      
-      if (voiceModeRef.current) { 
-          let finalDisplay = botMsgContent;
-          const finalMatch = botMsgContent.match(/\[\s*OPTIONS\s*:?[\s\S]*?\]/i);
-          if (finalMatch) {
-             finalDisplay = botMsgContent.replace(finalMatch[0], '');
-          }
-          speak(finalDisplay);
-      }
 
+      if (voiceModeRef.current) {
+        let finalDisplay = botMsgContent;
+        const finalMatch = botMsgContent.match(/\[\s*OPTIONS\s*:?[\s\S]*?\]/i);
+        if (finalMatch) {
+          finalDisplay = botMsgContent.replace(finalMatch[0], "");
+        }
+        speak(finalDisplay);
+      }
     } catch (err) {
       console.error(err);
       setMessages((prev) => [
@@ -137,42 +158,42 @@ const ChatWindow = ({ mode, setMode, onAction, currentUserId, onShowAuthModal })
       setIsLoading(false);
     }
   };
-  
+
   const voiceModeRef = useRef(voiceMode);
   useEffect(() => {
-      voiceModeRef.current = voiceMode;
+    voiceModeRef.current = voiceMode;
   }, [voiceMode]);
 
   const sendMessageRef = useRef(sendMessage);
   useEffect(() => {
-      sendMessageRef.current = sendMessage;
+    sendMessageRef.current = sendMessage;
   }, [sendMessage]);
 
-
   useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = true;
-      recognitionRef.current.lang = 'en-US';
+      recognitionRef.current.lang = "en-US";
       recognitionRef.current.interimResults = true;
 
       recognitionRef.current.onresult = (event) => {
         if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
 
-        let fullTranscript = '';
+        let fullTranscript = "";
         for (let i = 0; i < event.results.length; ++i) {
-             fullTranscript += event.results[i][0].transcript;
+          fullTranscript += event.results[i][0].transcript;
         }
 
         setInput(fullTranscript);
 
         silenceTimerRef.current = setTimeout(() => {
-             if (recognitionRef.current) recognitionRef.current.stop();
-             setIsListening(false);
-             if (fullTranscript.trim()) {
-                sendMessageRef.current(fullTranscript);
-             }
+          if (recognitionRef.current) recognitionRef.current.stop();
+          setIsListening(false);
+          if (fullTranscript.trim()) {
+            sendMessageRef.current(fullTranscript);
+          }
         }, 2000);
       };
 
@@ -183,7 +204,7 @@ const ChatWindow = ({ mode, setMode, onAction, currentUserId, onShowAuthModal })
       };
 
       recognitionRef.current.onend = () => {
-         // Optionally handle end
+        // Optionally handle end
       };
     }
   }, []);
@@ -212,34 +233,36 @@ const ChatWindow = ({ mode, setMode, onAction, currentUserId, onShowAuthModal })
 
   useEffect(() => {
     if (chatContainerRef.current) {
-        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+      chatContainerRef.current.scrollTop =
+        chatContainerRef.current.scrollHeight;
     }
   }, [messages, isLoading, currentOptions]);
 
   const speak = (text) => {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
-    
-    const cleanText = text.replace(/[*_#`]/g, ''); 
-    const utterance = new SpeechSynthesisUtterance(cleanText); 
+
+    const cleanText = text.replace(/[*_#`]/g, "");
+    const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.rate = 1.0;
     utterance.pitch = 1.0;
 
     // Attempt to select a more human-sounding female voice
     const voices = window.speechSynthesis.getVoices();
     const preferredVoices = [
-        "Google US English", // Chrome (Natural sounding)
-        "Microsoft Zira",    // Windows
-        "Samantha",          // macOS
-        "Google UK English Female"
+      "Google US English", // Chrome (Natural sounding)
+      "Microsoft Zira", // Windows
+      "Samantha", // macOS
+      "Google UK English Female",
     ];
-    
-    const selectedVoice = voices.find(voice => 
-        preferredVoices.some(pref => voice.name.includes(pref))
-    ) || voices.find(voice => voice.name.toLowerCase().includes("female"));
+
+    const selectedVoice =
+      voices.find((voice) =>
+        preferredVoices.some((pref) => voice.name.includes(pref))
+      ) || voices.find((voice) => voice.name.toLowerCase().includes("female"));
 
     if (selectedVoice) {
-        utterance.voice = selectedVoice;
+      utterance.voice = selectedVoice;
     }
 
     window.speechSynthesis.speak(utterance);
@@ -247,19 +270,19 @@ const ChatWindow = ({ mode, setMode, onAction, currentUserId, onShowAuthModal })
 
   const toggleListening = () => {
     if (!recognitionRef.current) {
-        alert("Speech recognition is not supported in this browser.");
-        return;
+      alert("Speech recognition is not supported in this browser.");
+      return;
     }
     if (isListening) {
-        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-        recognitionRef.current.stop();
-        setIsListening(false);
-        if (input.trim()) {
-            sendMessage(input);
-        }
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      recognitionRef.current.stop();
+      setIsListening(false);
+      if (input.trim()) {
+        sendMessage(input);
+      }
     } else {
-        recognitionRef.current.start();
-        setIsListening(true);
+      recognitionRef.current.start();
+      setIsListening(true);
     }
   };
 
@@ -269,14 +292,14 @@ const ChatWindow = ({ mode, setMode, onAction, currentUserId, onShowAuthModal })
 
   return (
     <div
-      className={`flex flex-col h-[600px] border rounded-xl overflow-hidden shadow-lg bg-white dark:bg-gray-800 transition-colors duration-500 ${ 
+      className={`flex flex-col h-[600px] border rounded-xl overflow-hidden shadow-lg bg-white dark:bg-gray-800 transition-colors duration-500 ${
         mode === "emergency"
           ? "border-red-500 border-2 shadow-red-100 dark:shadow-red-900"
           : "border-gray-200 dark:border-gray-700"
       }`}
     >
       <div
-        className={`p-4 ${ 
+        className={`p-4 ${
           mode === "emergency"
             ? "bg-red-600 text-white"
             : "bg-blue-600 text-white dark:bg-blue-800"
@@ -287,47 +310,50 @@ const ChatWindow = ({ mode, setMode, onAction, currentUserId, onShowAuthModal })
           {mode === "emergency" ? "EMERGENCY GUIDANCE" : "Medical Assistant"}
         </h3>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setVoiceMode(!voiceMode)}
+            className={`p-1 rounded hover:bg-white/20 transition-colors ${
+              voiceMode ? "bg-white/20" : ""
+            }`}
+            title={voiceMode ? "Mute Voice Output" : "Enable Voice Output"}
+          >
+            {voiceMode ? <Volume2 size={18} /> : <VolumeX size={18} />}
+          </button>
+          {mode === "emergency" && (
             <button
-                onClick={() => setVoiceMode(!voiceMode)}
-                className={`p-1 rounded hover:bg-white/20 transition-colors ${voiceMode ? 'bg-white/20' : ''}`}
-                title={voiceMode ? "Mute Voice Output" : "Enable Voice Output"}
-            >
-                {voiceMode ? <Volume2 size={18} /> : <VolumeX size={18} />}
-            </button>
-            {mode === "emergency" && (
-            <button
-                onClick={() => {
+              onClick={() => {
                 setMode("general");
                 setMessages([
-                    {
+                  {
                     role: "assistant",
-                    content: "Hello! I'm Dr. Samantha. How can I help you today?",
+                    content:
+                      "Hello! I'm Dr. Samantha. How can I help you today?",
                     model: "sethuiyer/Dr_Samantha-7b",
-                    },
+                  },
                 ]);
                 setCurrentOptions([]);
-                }}
-                className="text-xs bg-white/20 px-2 py-1 rounded hover:bg-white/30"
+              }}
+              className="text-xs bg-white/20 px-2 py-1 rounded hover:bg-white/30"
             >
-                End Emergency
+              End Emergency
             </button>
-            )}
+          )}
         </div>
       </div>
 
-      <div 
+      <div
         ref={chatContainerRef}
         className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900"
       >
         {messages.map((msg, idx) => (
           <div
             key={idx}
-            className={`flex ${ 
+            className={`flex ${
               msg.role === "user" ? "justify-end" : "justify-start"
             }`}
           >
             <div
-              className={`max-w-[85%] p-3 rounded-2xl shadow-sm ${ 
+              className={`max-w-[85%] p-3 rounded-2xl shadow-sm ${
                 msg.role === "user"
                   ? "bg-blue-600 text-white rounded-br-none dark:bg-blue-700"
                   : mode === "emergency" && msg.role === "assistant"
@@ -370,15 +396,15 @@ const ChatWindow = ({ mode, setMode, onAction, currentUserId, onShowAuthModal })
         {userId ? (
           <>
             <button
-                onClick={toggleListening}
-                className={`p-3 rounded-lg transition-colors ${ 
-                    isListening 
-                    ? 'bg-red-500 text-white animate-pulse' 
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                }`}
-                title="Voice Input"
+              onClick={toggleListening}
+              className={`p-3 rounded-lg transition-colors ${
+                isListening
+                  ? "bg-red-500 text-white animate-pulse"
+                  : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+              }`}
+              title="Voice Input"
             >
-                <Mic size={20} />
+              <Mic size={20} />
             </button>
             <input
               type="text"
@@ -390,9 +416,9 @@ const ChatWindow = ({ mode, setMode, onAction, currentUserId, onShowAuthModal })
                 (e.preventDefault(), sendMessage(input))
               }
               placeholder={
-                isListening 
-                ? "Listening..."
-                : mode === "emergency"
+                isListening
+                  ? "Listening..."
+                  : mode === "emergency"
                   ? "Respond here..."
                   : "Type your health question..."
               }

@@ -22,7 +22,9 @@ const Dashboard = () => {
     medications: "",
   });
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState(localStorage.getItem("user_id"));
+  const [currentUserId, setCurrentUserId] = useState(
+    localStorage.getItem("user_id")
+  );
 
   const fetchHistory = useCallback(async () => {
     const userId = localStorage.getItem("user_id");
@@ -31,7 +33,9 @@ const Dashboard = () => {
     if (userId) {
       setIsHistoryLoading(true);
       try {
-        const res = await axios.get(`/api/medical-history?user_id=${userId}`);
+        const res = await axios.get(
+          `https://reddragonnm.pythonanywhere.com/api/medical-history?user_id=${userId}`
+        );
         const data = res.data || {
           blood_type: "",
           allergies: "",
@@ -107,10 +111,13 @@ const Dashboard = () => {
       return;
     }
     try {
-      await axios.post("/api/medical-history", {
-        user_id: currentUserId,
-        ...editForm,
-      });
+      await axios.post(
+        "https://reddragonnm.pythonanywhere.com/api/medical-history",
+        {
+          user_id: currentUserId,
+          ...editForm,
+        }
+      );
       setHistory(editForm);
       setIsEditing(false);
     } catch (err) {
@@ -191,7 +198,9 @@ const Dashboard = () => {
           {/* Medical Summary Card */}
           <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-gray-800 dark:text-white">Medical ID</h3>
+              <h3 className="font-bold text-gray-800 dark:text-white">
+                Medical ID
+              </h3>
               {isEditing ? (
                 <div className="flex gap-2">
                   <button
@@ -264,19 +273,25 @@ const Dashboard = () => {
               ) : (
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between border-b border-gray-50 dark:border-gray-700 pb-2">
-                    <span className="text-gray-500 dark:text-gray-300">Blood Type</span>
+                    <span className="text-gray-500 dark:text-gray-300">
+                      Blood Type
+                    </span>
                     <span className="font-mono font-bold bg-gray-100 dark:bg-gray-700 px-2 rounded dark:text-white">
                       {history.blood_type || "N/A"}
                     </span>
                   </div>
                   <div>
-                    <span className="text-gray-500 dark:text-gray-300 block mb-1">Allergies</span>
+                    <span className="text-gray-500 dark:text-gray-300 block mb-1">
+                      Allergies
+                    </span>
                     <span className="font-medium text-gray-800 dark:text-white">
                       {history.allergies || "None recorded"}
                     </span>
                   </div>
                   <div>
-                    <span className="text-gray-500 dark:text-gray-300 block mb-1">Conditions</span>
+                    <span className="text-gray-500 dark:text-gray-300 block mb-1">
+                      Conditions
+                    </span>
                     <span className="font-medium text-gray-800 dark:text-white">
                       {history.conditions || "None recorded"}
                     </span>
