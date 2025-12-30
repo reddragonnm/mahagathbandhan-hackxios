@@ -68,6 +68,11 @@ CPR quality directly affects survival. The app includes a dedicated tool providi
 4.  **Guidance:** AI delivers concise, actionable steps (Triage -> Action -> Verify).
 5.  **Intervention:** Tools like the CPR Metronome activate automatically when required.
 
+![User Flow](userflow.jpeg)
+
+### System Architecture
+![System Architecture](architecture.jpeg)
+
 ### Tech Stack
 *   **Frontend:** React (Vite), Tailwind CSS, Lucide React, React-Leaflet.
 *   **Backend:** Flask (Python), SQLite (SQLAlchemy), Werkzeug Security.
